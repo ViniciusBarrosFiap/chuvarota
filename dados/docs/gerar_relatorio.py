@@ -36,7 +36,7 @@ req = [
      [("09_ouro_mvp.jpg", "Tabela ouro_mvp.")]),
     ("08 LGPD e uso pelo MVP",
      "Não há dado pessoal nas fontes. O único identificador é o <code>device_id</code> do robô, que na Ouro só aparece como hash SHA-256 (<code>device_hash</code>). O MVP usa a tabela <code>ouro_mvp</code>: o CSV exportado fica em <code>mvp/data/ouro_resumo.csv</code> e a rota <code>/historico</code> o entrega à tela inicial.",
-     [("15_mvp_tela.jpg", "Tela do MVP com a tabela do histórico.")]),
+     [("15_mvp_tela.png", "Tela do MVP com a tabela do histórico.")]),
     ("09 Repositório e README",
      f"Código, notebooks, amostras e instruções em <a href='{REPO}'>{REPO}</a> (pasta <code>dados/</code>).", []),
 ]
