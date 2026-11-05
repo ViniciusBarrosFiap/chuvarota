@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 450" font-family="Helvetica, Arial, sans-serif" font-size="12">
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#222"/></marker></defs>
+<text x="10" y="18" font-weight="bold" font-size="13">1. Processo principal (roda a cada 3 horas)</text>
+<g fill="#fff" stroke="#222" stroke-width="1.5">
+<circle cx="35" cy="75" r="14"/>
+<rect x="75" y="47" width="120" height="56" rx="8"/>
+<rect x="235" y="47" width="150" height="56" rx="8" stroke-width="2.5"/>
+<polygon points="450,75 475,50 500,75 475,100"/>
+<rect x="545" y="47" width="130" height="56" rx="8"/>
+<rect x="545" y="125" width="130" height="50" rx="8"/>
+<rect x="715" y="47" width="120" height="56" rx="8"/>
+<circle cx="900" cy="75" r="14" stroke-width="4"/>
+</g>
+<g fill="#111" text-anchor="middle">
+<text x="135" y="72">Ler a lista</text><text x="135" y="88">de regiões</text>
+<text x="310" y="72">Processar cada</text><text x="310" y="88">região (detalhe abaixo)</text><text x="310" y="40" font-size="14">↻</text>
+<text x="475" y="78" font-size="11">Algum</text><text x="475" y="92" font-size="11">sucesso?</text>
+<text x="610" y="72">Gravar</text><text x="610" y="88">alertas.json</text>
+<text x="610" y="146">Manter o arquivo</text><text x="610" y="162">anterior</text>
+<text x="775" y="72">Registrar o resumo</text><text x="775" y="88">no log</text>
+<text x="35" y="108" font-size="10">Início (agenda)</text><text x="900" y="108" font-size="10">Fim (MVP lê)</text>
+<text x="520" y="66" font-size="10">sim</text><text x="465" y="122" font-size="10">não</text>
+</g>
+<g stroke="#222" stroke-width="1.5" fill="none" marker-end="url(#a)">
+<path d="M49 75 L75 75"/><path d="M195 75 L235 75"/><path d="M385 75 L450 75"/><path d="M500 75 L545 75"/>
+<path d="M475 100 L475 150 L545 150"/><path d="M675 75 L715 75"/><path d="M675 150 L775 150 L775 103"/><path d="M835 75 L886 75"/>
+</g>
+<text x="10" y="215" font-weight="bold" font-size="13">2. Detalhe: processar cada região</text>
+<g fill="#fff" stroke="#222" stroke-width="1.5">
+<circle cx="35" cy="300" r="14"/>
+<polygon points="70,300 110,268 150,300 110,332"/>
+<rect x="55" y="225" width="110" height="36" rx="8"/>
+<rect x="175" y="272" width="110" height="56" rx="8"/>
+<polygon points="310,300 350,268 390,300 350,332"/>
+<rect x="405" y="272" width="120" height="56" rx="8"/>
+<rect x="565" y="272" width="140" height="56" rx="8"/>
+<circle cx="900" cy="300" r="14" stroke-width="4"/>
+<polygon points="305,400 350,368 395,400 350,432"/>
+<rect x="175" y="380" width="110" height="40" rx="8"/>
+<rect x="405" y="380" width="140" height="40" rx="8"/>
+</g>
+<g fill="#111" text-anchor="middle">
+<text x="110" y="297" font-size="10">Região</text><text x="110" y="310" font-size="10">repetida?</text>
+<text x="110" y="247" font-size="11">Avisar no log e pular</text>
+<text x="230" y="297">Consultar a API</text><text x="230" y="313">Open-Meteo</text>
+<text x="350" y="297" font-size="10">Resposta</text><text x="350" y="309" font-size="10">ok?</text>
+<text x="465" y="294">Maior chuva em 3h</text><text x="465" y="310" font-size="10">(nulo e negativo = 0)</text>
+<text x="635" y="294">Classificar: alto (≥15 mm),</text><text x="635" y="310">médio (≥5) ou baixo</text>
+<text x="350" y="397" font-size="10">Menos de</text><text x="350" y="409" font-size="10">3 tentativas?</text>
+<text x="230" y="397">Esperar e</text><text x="230" y="411">tentar de novo</text>
+<text x="475" y="397">Registrar a falha</text><text x="475" y="411">no log e seguir</text>
+
+<text x="35" y="332" font-size="10">Início</text><text x="900" y="332" font-size="10">Fim</text>
+<text x="116" y="262" font-size="10">sim</text><text x="152" y="292" font-size="10">não</text><text x="392" y="292" font-size="10">sim</text><text x="356" y="352" font-size="10">não</text><text x="398" y="392" font-size="10">não</text><text x="288" y="392" font-size="10">sim</text>
+</g>
+<g stroke="#222" stroke-width="1.5" fill="none" marker-end="url(#a)">
+<path d="M49 300 L85 300"/><path d="M150 300 L175 300"/><path d="M110 268 L110 261"/>
+<path d="M285 300 L310 300"/><path d="M390 300 L405 300"/><path d="M525 300 L565 300"/><path d="M705 300 L725 300"/><path d="M845 300 L886 300"/>
+<path d="M350 332 L350 368"/><path d="M305 400 L285 400"/><path d="M230 380 L230 328"/>
+<path d="M395 400 L405 400"/><path d="M545 400 L900 400 L900 314"/>
+<path d="M165 243 L860 243 L900 286" stroke-dasharray="4 3"/>
+</g>
+<rect x="725" y="272" width="120" height="56" rx="8" fill="#fff" stroke="#222" stroke-width="1.5"/>
+<text x="785" y="296" text-anchor="middle" fill="#111">Guardar o alerta e</text><text x="785" y="312" text-anchor="middle" fill="#111">registrar no log</text>
+</svg>

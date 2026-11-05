@@ -1,0 +1,8 @@
+--- execução normal ---
+2026-11-04 22:11:47,082 INFO fim ok=5 falhas=0
+2026-11-04 22:32:37,737 INFO regiao=se mm_3h=0.0 risco=baixo
+2026-11-04 22:32:38,717 INFO regiao=pinheiros mm_3h=0.2 risco=baixo
+2026-11-04 22:32:39,479 INFO regiao=mooca mm_3h=0.0 risco=baixo
+2026-11-04 22:32:40,307 INFO regiao=santo-amaro mm_3h=0.2 risco=baixo
+2026-11-04 22:32:41,127 INFO regiao=tatuape mm_3h=0.2 risco=baixo
+2026-11-04 22:32:41,129 INFO fim ok=5 falhas=0

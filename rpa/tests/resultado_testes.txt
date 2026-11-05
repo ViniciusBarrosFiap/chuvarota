@@ -1,0 +1,5 @@
+tests/test_rpa.py::test_sucesso PASSED                                   [ 25%]
+tests/test_rpa.py::test_decisao PASSED                                   [ 50%]
+tests/test_rpa.py::test_falha_e_duplicado PASSED                         [ 75%]
+tests/test_rpa.py::test_falha_total_nao_apaga_arquivo PASSED             [100%]
+============================== 4 passed in 0.09s ===============================
