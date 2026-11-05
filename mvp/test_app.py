@@ -11,3 +11,10 @@ def test_historico():
     assert r.status_code == 200 and "regiao" in r.json()[0]
 
 def test_pagina(): assert "ChuvaRota" in c.get("/").text
+
+
+def test_metricas():
+    c.get("/health")
+    texto = c.get("/metrics").text
+    assert 'http_requests_total{method="GET",path="/health",status="200"}' in texto
+    assert "http_request_duration_seconds_bucket" in texto

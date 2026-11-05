@@ -1,0 +1,86 @@
+name: devsecops
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install semgrep
+      - run: semgrep scan --config p/python --config p/dockerfile --metrics=off --error mvp/app.py rpa/src ia/src Dockerfile
+
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install requests pytest httpx -r mvp/requirements.txt
+      - run: pytest rpa mvp
+
+  imagem:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t chuvarota-mvp:ci .
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: chuvarota-mvp:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config
+          scan-ref: infra
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+  deploy:
+    needs: [gitleaks, semgrep, testes, imagem, terraform]
+    # só publica na main e depois que a nuvem foi criada (as variáveis são definidas após o terraform apply)
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.ACR_NAME != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Publicar a imagem
+        run: |
+          IMG=${{ vars.ACR_NAME }}.azurecr.io/chuvarota-mvp:${{ github.sha }}
+          az acr login --name ${{ vars.ACR_NAME }}
+          docker build -t "$IMG" .
+          docker push "$IMG"
+          echo "IMG=$IMG" >> "$GITHUB_ENV"
+      - name: Atualizar o MVP
+        run: az containerapp update --name chuvarota-mvp --resource-group ${{ vars.RESOURCE_GROUP }} --image "$IMG"
+      - name: Teste de fumaça
+        run: |
+          FQDN=$(az containerapp show --name chuvarota-mvp --resource-group ${{ vars.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+          for i in $(seq 1 12); do curl -fsS "https://$FQDN/health" && exit 0; sleep 10; done
+          exit 1

@@ -7,3 +7,4 @@ __pycache__/
 dados/chegada/
 airflow_home/
 .venv-ia/
+.terraform/

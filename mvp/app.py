@@ -1,11 +1,34 @@
 """MVP ChuvaRota: le alertas gerados pela RPA e recebe leituras do sensor do robo."""
 import csv, json, time
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="ChuvaRota")
+
+PEDIDOS = Counter("http_requests_total", "Pedidos HTTP", ["method", "path", "status"])
+DURACAO = Histogram("http_request_duration_seconds", "Duração dos pedidos", ["path"])
+EM_ANDAMENTO = Gauge("http_requests_in_flight", "Pedidos em andamento")
+
+
+@app.middleware("http")
+async def metricas(request: Request, call_next):
+    inicio = time.perf_counter()
+    EM_ANDAMENTO.inc()
+    status = 500
+    try:
+        resposta = await call_next(request)
+        status = resposta.status_code
+        return resposta
+    finally:
+        EM_ANDAMENTO.dec()
+        rota = request.scope.get("route")
+        path = rota.path if rota else "outro"  # nome da rota, não a URL, para não criar uma série por URL
+        PEDIDOS.labels(request.method, path, status).inc()
+        DURACAO.labels(path).observe(time.perf_counter() - inicio)
+
 DADOS = Path(__file__).parent / "data" / "alertas.json"
 leituras: list = []  # shortcut: memoria efemera; trocar por banco/KV se for alem da demo
 
@@ -18,6 +41,11 @@ class Leitura(BaseModel):
 @app.get("/")
 def pagina():
     return FileResponse(Path(__file__).parent / "index.html")
+
+
+@app.get("/metrics", include_in_schema=False)
+def metricas_prometheus():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/health")

@@ -1,0 +1,2 @@
+# copie para terraform.tfvars (que o .gitignore deixa fora do repositório)
+subscription_id = "00000000-0000-0000-0000-000000000000"
