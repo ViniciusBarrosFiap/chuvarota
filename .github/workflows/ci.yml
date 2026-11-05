@@ -1,0 +1,14 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  seguranca-e-testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: gitleaks/gitleaks-action@v2
+        env: {GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install requests pytest httpx -r mvp/requirements.txt
+      - run: pytest rpa mvp
