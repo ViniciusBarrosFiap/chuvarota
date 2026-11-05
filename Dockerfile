@@ -3,6 +3,9 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 
+# atualiza os pacotes do sistema (o Trivy barrou o apt 3.0.3, corrigido na 3.0.4)
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 COPY mvp/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
