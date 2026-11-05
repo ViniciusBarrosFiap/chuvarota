@@ -25,3 +25,9 @@
 2026-11-04 22:32:41,288 WARNING regiao=pinheiros tentativa=3 erro=ConnectionError
 2026-11-04 22:32:41,288 ERROR regiao=pinheiros falhou: falhou depois de 3 tentativas
 2026-11-04 22:32:41,288 INFO fim ok=0 falhas=2
+2026-11-05 01:34:34,937 INFO regiao=se mm_3h=0.0 risco=baixo
+2026-11-05 01:34:35,164 INFO regiao=pinheiros mm_3h=0.2 risco=baixo
+2026-11-05 01:34:35,573 INFO regiao=mooca mm_3h=0.0 risco=baixo
+2026-11-05 01:34:35,774 INFO regiao=santo-amaro mm_3h=0.2 risco=baixo
+2026-11-05 01:34:36,177 INFO regiao=tatuape mm_3h=0.2 risco=baixo
+2026-11-05 01:34:36,177 INFO fim ok=5 falhas=0
