@@ -22,6 +22,11 @@ python rpa/src/rpa.py
 pytest rpa/tests
 ```
 
+## Links
+- Repositório: https://github.com/ViniciusBarrosFiap/chuvarota (pasta `rpa/`)
+- Vídeo (até 3 min): https://github.com/ViniciusBarrosFiap/chuvarota/blob/main/rpa/assets/video_rpa.mp4
+- Relatório em PDF: https://github.com/ViniciusBarrosFiap/chuvarota/blob/main/rpa/docs/relatorio_rpa.pdf
+
 ## Pastas
 - `src/` código
 - `tests/` testes e `resultado_testes.txt`
