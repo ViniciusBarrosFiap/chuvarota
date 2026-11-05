@@ -1,0 +1,8 @@
+__pycache__/
+.venv/
+.venv-af/
+*.tfstate*
+*.tfvars
+.env
+dados/chegada/
+airflow_home/

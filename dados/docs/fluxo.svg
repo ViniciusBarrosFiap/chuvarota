@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" font-family="Helvetica, Arial, sans-serif" font-size="13">
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#333"/></marker></defs>
+<g fill="#eef3fb" stroke="#3b5b92" stroke-width="1.5">
+<rect x="10" y="20" width="120" height="44" rx="6"/><rect x="10" y="85" width="120" height="44" rx="6"/><rect x="10" y="150" width="120" height="44" rx="6"/>
+<rect x="165" y="60" width="150" height="110" rx="6" fill="#fff4e0" stroke="#b7791f"/>
+<rect x="350" y="85" width="110" height="60" rx="6" fill="#fff4e0" stroke="#b7791f"/>
+<rect x="495" y="20" width="110" height="50" rx="6" fill="#f1e3d3" stroke="#8a5a2b"/>
+<rect x="495" y="100" width="110" height="50" rx="6" fill="#e6e6e6" stroke="#666"/>
+<rect x="495" y="180" width="110" height="50" rx="6" fill="#fff3c4" stroke="#b59a00"/>
+<rect x="640" y="85" width="110" height="60" rx="6" fill="#e7f6e7" stroke="#2f7d32"/>
+<rect x="785" y="85" width="105" height="60" rx="6" fill="#e7f6e7" stroke="#2f7d32"/>
+</g>
+<g fill="#111" text-anchor="middle">
+<text x="70" y="40">API Open-Meteo</text><text x="70" y="55" font-size="11">clima (JSON)</text>
+<text x="70" y="105">API IBGE</text><text x="70" y="120" font-size="11">distritos (JSON)</text>
+<text x="70" y="170">Robô ESP32</text><text x="70" y="185" font-size="11">leituras (JSON)</text>
+<text x="240" y="80" font-weight="bold">Airflow</text><text x="240" y="98" font-size="11">DAG gs_coleta (diária)</text><text x="240" y="114" font-size="11">3 coletas em paralelo</text><text x="240" y="130" font-size="11">+ conferir_chegada</text>
+<text x="405" y="108" font-weight="bold">chegada/</text><text x="405" y="126" font-size="11">1 arquivo por coleta</text>
+<text x="550" y="40" font-weight="bold">Bronze</text><text x="550" y="57" font-size="11">Auto Loader</text>
+<text x="550" y="120" font-weight="bold">Prata</text><text x="550" y="137" font-size="11">tipos, regras, MERGE</text>
+<text x="550" y="200" font-weight="bold">Ouro</text><text x="550" y="217" font-size="11">fato, dimensões, hash</text>
+<text x="695" y="110" font-weight="bold">CSV ouro_mvp</text><text x="695" y="128" font-size="11">export manual</text>
+<text x="837" y="110" font-weight="bold">MVP</text><text x="837" y="128" font-size="11">API + tela</text>
+</g>
+<g stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#a)">
+<path d="M130 42 L165 80"/><path d="M130 107 L165 115"/><path d="M130 172 L165 150"/>
+<path d="M315 115 L350 115"/>
+<path d="M460 105 L495 50" stroke-dasharray="4 3"/><path d="M550 70 L550 100"/><path d="M550 150 L550 180"/>
+<path d="M605 205 L640 125"/><path d="M750 115 L785 115"/>
+</g>
+<text x="405" y="175" text-anchor="middle" font-size="11" fill="#555">upload manual ao Volume do Databricks</text>
+<text x="405" y="190" text-anchor="middle" font-size="11" fill="#555">(Free Edition não conecta ao Airflow)</text>
+</svg>

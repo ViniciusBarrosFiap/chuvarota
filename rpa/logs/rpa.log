@@ -1,0 +1,12 @@
+2026-11-04 21:01:30,301 INFO regiao=se mm_3h=0.0 risco=baixo
+2026-11-04 21:01:31,658 INFO regiao=pinheiros mm_3h=0.0 risco=baixo
+2026-11-04 21:01:32,316 INFO regiao=mooca mm_3h=0.0 risco=baixo
+2026-11-04 21:01:32,978 INFO regiao=santo-amaro mm_3h=0.0 risco=baixo
+2026-11-04 21:01:33,635 INFO regiao=tatuape mm_3h=0.0 risco=baixo
+2026-11-04 21:01:33,635 INFO fim ok=5 falhas=0
+2026-11-04 22:11:42,922 INFO regiao=se mm_3h=0.0 risco=baixo
+2026-11-04 22:11:44,846 INFO regiao=pinheiros mm_3h=0.2 risco=baixo
+2026-11-04 22:11:45,604 INFO regiao=mooca mm_3h=0.0 risco=baixo
+2026-11-04 22:11:46,393 INFO regiao=santo-amaro mm_3h=0.2 risco=baixo
+2026-11-04 22:11:47,081 INFO regiao=tatuape mm_3h=0.2 risco=baixo
+2026-11-04 22:11:47,082 INFO fim ok=5 falhas=0

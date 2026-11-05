@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChuvaRota</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 0 auto; padding: 16px; line-height: 1.5; color: #1b1b1b; background: #fff; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 24px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ccc; }
+  .alto { color: #b00020; font-weight: bold; }
+  .medio { color: #8a5a00; font-weight: bold; }
+  @media (prefers-color-scheme: dark) { body { background: #111; color: #eee; } th, td { border-color: #444; } .alto { color: #ff6b81; } .medio { color: #ffc266; } }
+</style>
+</head>
+<body>
+<h1>ChuvaRota</h1>
+<p>Risco de chuva por região de São Paulo.</p>
+
+<h2>Alertas agora</h2>
+<table><thead><tr><th>Região</th><th>Chuva em 3h (mm)</th><th>Risco</th></tr></thead><tbody id="alertas"><tr><td colspan="3">Carregando...</td></tr></tbody></table>
+
+<h2>Histórico (tabela Ouro: ouro_mvp)</h2>
+<table><thead><tr><th>Região</th><th>Chuva total (mm)</th><th>Horas de risco alto</th></tr></thead><tbody id="historico"><tr><td colspan="3">Carregando...</td></tr></tbody></table>
+
+<script>
+function linhas(id, rows, cols, classe) {
+  const tb = document.getElementById(id);
+  tb.replaceChildren();
+  for (const r of rows) {
+    const tr = document.createElement("tr");
+    for (const c of cols) {
+      const td = document.createElement("td");
+      td.textContent = r[c];
+      if (classe && c === classe) td.className = r[c];
+      tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  }
+}
+function erro(id) { document.getElementById(id).innerHTML = "<tr><td colspan='3'>Sem dados no momento.</td></tr>"; }
+
+fetch("/alertas").then(r => r.ok ? r.json() : Promise.reject())
+  .then(d => linhas("alertas", d.alertas, ["regiao", "mm_3h", "risco"], "risco")).catch(() => erro("alertas"));
+fetch("/historico").then(r => r.ok ? r.json() : Promise.reject())
+  .then(d => linhas("historico", d, ["regiao", "chuva_total_mm", "horas_risco_alto"])).catch(() => erro("historico"));
+</script>
+</body>
+</html>
