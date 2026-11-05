@@ -1,0 +1,11 @@
+scikit-learn
+pandas
+numpy
+requests
+fastapi
+uvicorn
+httpx
+pytest
+nbformat
+nbclient
+ipykernel

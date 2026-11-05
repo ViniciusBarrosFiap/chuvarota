@@ -1,0 +1,1267 @@
+{
+ "A sem contexto": [
+  {
+   "caso": 1,
+   "tipo": "resposta",
+   "pergunta": "Posso atravessar de carro uma rua alagada?",
+   "saida": {
+    "resposta": "Não, você não deve atravessar uma rua alagada, mesmo em um carro. Isso pode ser perigoso e ilegal. Procure um local mais seguro para atravessar ou procure um local de evacuação próximo.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 2,
+   "tipo": "resposta",
+   "pergunta": "Como descubro se minha casa está em área de risco?",
+   "saida": {
+    "resposta": "Para descobrir se sua casa está em área de risco, você pode consultar o site do Corpo de Bombeiros ou o Portal da Prefeitura de São Paulo, onde informações sobre áreas de risco são disponibilizadas.",
+    "fonte_id": "Portal da Prefeitura de São Paulo ou Corpo de Bombeiros",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": true,
+   "alucinou": true
+  },
+  {
+   "caso": 3,
+   "tipo": "resposta",
+   "pergunta": "O que devo fazer com meus documentos se houver risco de alagamento?",
+   "saida": {
+    "resposta": "Se houver risco de alagamento, é recomendável guardar seus documentos em um local seguro e elevado, como um cofre ou armário de armazenamento de documentos, para evitar danos causados pela água.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 4,
+   "tipo": "resposta",
+   "pergunta": "Posso usar velas ou lamparinas durante a enchente?",
+   "saida": {
+    "resposta": "Não é recomendável usar velas ou lamparinas durante uma enchente, pois pode aumentar o risco de incêndio. Evite usar fósforos e lâmpadas a gás. Em caso de emergência, entre em contato com as autoridades de emergência.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 5,
+   "tipo": "resposta",
+   "pergunta": "Qual o telefone da Defesa Civil?",
+   "saida": {
+    "resposta": "O telefone da Defesa Civil de São Paulo é (11) 3011-8910.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 6,
+   "tipo": "resposta",
+   "pergunta": "Quais os principais sintomas da leptospirose?",
+   "saida": {
+    "resposta": "Os principais sintomas da leptospirose incluem febre alta, dor de cabeça intensa, dores musculares e articulares, dores abdominais, vômitos, diarreia, erupção cutânea e, em casos graves, problemas de função renal e hepática.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 7,
+   "tipo": "resposta",
+   "pergunta": "Como tratar a água antes de beber depois da enchente?",
+   "saida": {
+    "resposta": "Antes de beber água após a enchente, é importante filtrá-la ou deixá-la esfriar para eliminar possíveis impurezas e bactérias.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 8,
+   "tipo": "resposta",
+   "pergunta": "Posso usar um aparelho elétrico que ficou molhado?",
+   "saida": {
+    "resposta": "Não, você deve evitar usar aparelhos elétricos que ficaram molhados, pois isso pode causar danos elétricos e potencialmente perigosos. Ligue um profissional para fazer a verificação e reparo necessário.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 9,
+   "tipo": "resposta",
+   "pergunta": "Quando devo voltar para casa depois do alagamento?",
+   "saida": {
+    "resposta": "Deve-se esperar até que a situação de alagamento seja considerada segura antes de voltar para casa.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 10,
+   "tipo": "resposta",
+   "pergunta": "O que colocar no kit de emergência para sair de casa rápido?",
+   "saida": {
+    "resposta": "No seu kit de emergência, inclua itens como água, alimentos não pereáveis, água sanitária, garrafas de água, lanterna ou lampião, chaveiro, documentos essenciais, medicamentos e itens de higiene pessoal. Não esqueça de um capacete e luvas para proteção. Em caso de alagamento, leve também um par de sapatos impermeáveis e um guarda-chuva. Mantenha-se informado sobre as recomendações locais para emergências.",
+    "fonte_id": "null",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 11,
+   "tipo": "resposta",
+   "pergunta": "O que é um alagamento?",
+   "saida": {
+    "resposta": "Alagamento é um fenômeno em que áreas de um local ficam submersas por água devido a excesso de chuva ou devido a problemas no sistema de drenagem.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 12,
+   "tipo": "resposta",
+   "pergunta": "Qual a diferença entre inundação e enxurrada?",
+   "saida": {
+    "resposta": "Inundação refere-se a um processo de submersão de uma área por água, enquanto enxurrada é um fenômeno meteorológico caracterizado por precipitação intensa que pode levar a inundação.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 13,
+   "tipo": "resposta",
+   "pergunta": "Como evitar roedores depois da enchente?",
+   "saida": {
+    "resposta": "Após uma enchente, é importante manter a casa limpa e livre de alimentos para evitar a atração de roedores. É recomendável fechar aberturas e reparar buracos para prevenir a entrada de roedores. Além disso, manter a área ao redor da casa limpa e liminar também ajuda a reduzir a presença de roedores.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 14,
+   "tipo": "resposta",
+   "pergunta": "O que fazer com alimentos que tiveram contato com a água da enchente?",
+   "saida": {
+    "resposta": "Alimentos que tiveram contato com água da enchente devem ser descartados. Não é seguro consumi-los, mesmo que pareçam inteiros ou saudáveis.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 15,
+   "tipo": "resposta",
+   "pergunta": "Devo confiar em mensagens sobre a enchente que recebo nas redes sociais?",
+   "saida": {
+    "resposta": "É importante verificar a fonte da informação para garantir a precisão das mensagens sobre chuva forte e alagamentos em São Paulo recebidas nas redes sociais.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 16,
+   "tipo": "resposta",
+   "pergunta": "Estou no trânsito e há alagamentos. Como escolho a rota?",
+   "saida": {
+    "resposta": "Ao enfrentar alagamentos no trânsito, tente escolher rotas alternativas que não estejam afetadas. Caso não seja possível evitar o trânsito, procure por vias secas ou mais elevadas. Mantenha-se informado sobre as condições de trânsito e possíveis alterações de rotas através de aplicativos de transporte público ou de mapas online.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 17,
+   "tipo": "resposta",
+   "pergunta": "Quem precisa de ajuda extra durante o alagamento?",
+   "saida": {
+    "resposta": "Pessoas idosas, crianças, gestantes, pessoas com deficiência e animais de estimação precisam de ajuda extra durante o alagamento.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 18,
+   "tipo": "resposta",
+   "pergunta": "Como limpar a casa depois que a água baixa?",
+   "saida": {
+    "resposta": "Após a água baixar, é importante secar todos os ambientes para evitar mofo e outros problemas de saúde. Em seguida, limpe os móveis e superfícies com produtos de limpeza adequados, evitando áreas que ainda estão úmidas. Finalize limpando e secando os banheiros e áreas de lavar louça, que são mais propensas a problemas de umidade.",
+    "fonte_id": "null",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 19,
+   "tipo": "nao_consta",
+   "pergunta": "Quantos centímetros de água conseguem arrastar um carro?",
+   "saida": {
+    "resposta": "Um carro pode ser arrastado por até 30 centímetros de água, dependendo da velocidade do fluxo e do peso do veículo.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": null,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 20,
+   "tipo": "nao_consta",
+   "pergunta": "Qual é a multa por dirigir em uma rua alagada?",
+   "saida": {
+    "resposta": "A multa por dirigir em uma rua alagada varia dependendo da legislação local, mas geralmente inclui multa de infração de trânsito e possivelmente pontos na carteira de motorista. É sempre melhor evitar rodar em condições de alagamento para garantir a segurança.",
+    "fonte_id": "null",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": null,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 21,
+   "tipo": "nao_consta",
+   "pergunta": "Qual a previsão de chuva para o próximo mês?",
+   "saida": {
+    "resposta": "Para fornecer a previsão de chuva para o próximo mês, precisaria consultar um banco de dados meteorológico atualizado. Recomendo consultar sites oficiais de previsão do tempo ou aplicativos meteorológicos para informações mais precisas e atualizadas.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": null,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 22,
+   "tipo": "nao_consta",
+   "pergunta": "O que fazer em caso de deslizamento de terra?",
+   "saida": {
+    "resposta": "Em caso de deslizamento de terra, a primeira coisa a fazer é evacuar imediatamente para um local seguro. Lembre-se de que a segurança é a prioridade. Em seguida, entre em contato com as autoridades locais para informar a situação e solicitar assistência. Mantenha-se informado sobre as recomendações das autoridades locais e siga suas instruções.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": null,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 23,
+   "tipo": "nao_consta",
+   "pergunta": "O seguro do carro cobre danos causados por enchente?",
+   "saida": {
+    "resposta": "O seguro do carro geralmente cobre danos causados por enchente, desde que o carro esteja estacionado e não seja responsabilidade do segurado. É importante verificar a cláusula específica do seu contrato.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": null,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 24,
+   "tipo": "nao_consta",
+   "pergunta": "Existe vacina contra a leptospirose para humanos?",
+   "saida": {
+    "resposta": "Não existe atualmente uma vacina disponível para a leptospirose para humanos.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": null,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 25,
+   "tipo": "ferramenta",
+   "pergunta": "Qual o risco de chuva agora na região da Mooca?",
+   "saida": {
+    "resposta": "O risco de chuva forte na região da Mooca é considerado moderado nesta hora. É recomendável manter-se atento às atualizações da ChuvaRota para informações mais precisas.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 26,
+   "tipo": "ferramenta",
+   "pergunta": "Como está o risco de chuva em Pinheiros neste momento?",
+   "saida": {
+    "resposta": "O risco de chuva em Pinheiros neste momento não está sendo informado diretamente por ChuvaRota. Para obter informações atualizadas, sugerimos consultar um aplicativo meteorológico confiável ou a prefeitura de São Paulo.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": true
+  },
+  {
+   "caso": 27,
+   "tipo": "ferramenta",
+   "pergunta": "O risco de chuva no Tatuapé está alto agora?",
+   "saida": {
+    "resposta": "O risco de chuva forte no Tatuapé está alto atualmente. Mantenha-se atento às atualizações da ChuvaRota.",
+    "fonte_id": null,
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": true
+  }
+ ],
+ "B RAG simples": [
+  {
+   "caso": 1,
+   "tipo": "resposta",
+   "pergunta": "Posso atravessar de carro uma rua alagada?",
+   "saida": {
+    "resposta": "Não. Nunca atravesse pontes, ruas ou avenidas alagadas, mesmo estando de carro, moto ou bicicleta, pois a força da água poderá arrastá-lo.",
+    "fonte_id": "alagamentos_mdr-17",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 2,
+   "tipo": "resposta",
+   "pergunta": "Como descubro se minha casa está em área de risco?",
+   "saida": {
+    "resposta": "Procure a Prefeitura para saber se sua casa está em área de risco.",
+    "fonte_id": "alagamentos_mdr-01",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 3,
+   "tipo": "resposta",
+   "pergunta": "O que devo fazer com meus documentos se houver risco de alagamento?",
+   "saida": {
+    "resposta": "Se houver risco de alagamentos ou inundações, coloque documentos e objetos de valor em sacos plásticos bem fechados e em local protegido e de fácil acesso em caso de evacuação.",
+    "fonte_id": "alagamentos_mdr-06",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 4,
+   "tipo": "resposta",
+   "pergunta": "Posso usar velas ou lamparinas durante a enchente?",
+   "saida": {
+    "resposta": "Não. Não use velas ou lamparinas devido ao risco de incêndio.",
+    "fonte_id": "alagamentos_mdr-11",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 5,
+   "tipo": "resposta",
+   "pergunta": "Qual o telefone da Defesa Civil?",
+   "saida": {
+    "resposta": "Defesa Civil: 199",
+    "fonte_id": "alagamentos_mdr-tel",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 6,
+   "tipo": "resposta",
+   "pergunta": "Quais os principais sintomas da leptospirose?",
+   "saida": {
+    "resposta": "Os principais sintomas envolvem febre, dor de cabeça, dores pelo corpo, principalmente nas panturrilhas, podendo também ocorrer vômitos, diarreia e tosse.",
+    "fonte_id": "lepto_medidas-13",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 7,
+   "tipo": "resposta",
+   "pergunta": "Como tratar a água antes de beber depois da enchente?",
+   "saida": {
+    "resposta": "Tratar a água antes do consumo, fervendo ou utilizando hipoclorito de sódio.",
+    "fonte_id": "lepto_medidas-09",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 8,
+   "tipo": "resposta",
+   "pergunta": "Posso usar um aparelho elétrico que ficou molhado?",
+   "saida": {
+    "resposta": "Não. Não use equipamentos elétricos que tenham sido molhados ou que estiveram em locais alagados, pois há risco de choque elétrico e curto-circuito.",
+    "fonte_id": "alagamentos_mdr-28",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 9,
+   "tipo": "resposta",
+   "pergunta": "Quando devo voltar para casa depois do alagamento?",
+   "saida": {
+    "resposta": "Volte para casa durante a luz do dia.",
+    "fonte_id": "alagamentos_mdr-29",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 10,
+   "tipo": "resposta",
+   "pergunta": "O que colocar no kit de emergência para sair de casa rápido?",
+   "saida": {
+    "resposta": "Monte um kit com água potável, roupas e remédios",
+    "fonte_id": "alagamentos_mdr-12",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 11,
+   "tipo": "resposta",
+   "pergunta": "O que é um alagamento?",
+   "saida": {
+    "resposta": "Os alagamentos são caracterizados pela extrapolação da capacidade de escoamento de sistemas de drenagem urbana e consequente acúmulo de água em ruas, calçadas ou outras infraestruturas urbanas, em decorrência de chuvas intensas.",
+    "fonte_id": "autoprotecao-03",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 12,
+   "tipo": "resposta",
+   "pergunta": "Qual a diferença entre inundação e enxurrada?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 13,
+   "tipo": "resposta",
+   "pergunta": "Como evitar roedores depois da enchente?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 14,
+   "tipo": "resposta",
+   "pergunta": "O que fazer com alimentos que tiveram contato com a água da enchente?",
+   "saida": {
+    "resposta": "Descarte alimentos que tiveram contato com a água da inundação.",
+    "fonte_id": "lepto_como_proteger-04",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 15,
+   "tipo": "resposta",
+   "pergunta": "Devo confiar em mensagens sobre a enchente que recebo nas redes sociais?",
+   "saida": {
+    "resposta": "Não. Desconfie das mensagens não-oficiais divulgadas nas redes sociais.",
+    "fonte_id": "alagamentos_mdr-35",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 16,
+   "tipo": "resposta",
+   "pergunta": "Estou no trânsito e há alagamentos. Como escolho a rota?",
+   "saida": {
+    "resposta": "Se estiver no trânsito, utilize os serviços de rádio ou de aplicativos para traçar as rotas que evitem áreas alagadas.",
+    "fonte_id": "alagamentos_mdr-19",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 17,
+   "tipo": "resposta",
+   "pergunta": "Quem precisa de ajuda extra durante o alagamento?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 18,
+   "tipo": "resposta",
+   "pergunta": "Como limpar a casa depois que a água baixa?",
+   "saida": {
+    "resposta": "Após as águas baixarem, retire a lama e desinfete pisos, paredes e bancadas com água sanitária.",
+    "fonte_id": "lepto_como_proteger-02",
+    "recusa": false
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 19,
+   "tipo": "nao_consta",
+   "pergunta": "Quantos centímetros de água conseguem arrastar um carro?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 20,
+   "tipo": "nao_consta",
+   "pergunta": "Qual é a multa por dirigir em uma rua alagada?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 21,
+   "tipo": "nao_consta",
+   "pergunta": "Qual a previsão de chuva para o próximo mês?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 22,
+   "tipo": "nao_consta",
+   "pergunta": "O que fazer em caso de deslizamento de terra?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 23,
+   "tipo": "nao_consta",
+   "pergunta": "O seguro do carro cobre danos causados por enchente?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 24,
+   "tipo": "nao_consta",
+   "pergunta": "Existe vacina contra a leptospirose para humanos?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 25,
+   "tipo": "ferramenta",
+   "pergunta": "Qual o risco de chuva agora na região da Mooca?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 26,
+   "tipo": "ferramenta",
+   "pergunta": "Como está o risco de chuva em Pinheiros neste momento?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 27,
+   "tipo": "ferramenta",
+   "pergunta": "O risco de chuva no Tatuapé está alto agora?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  }
+ ],
+ "C RAG + agente": [
+  {
+   "caso": 1,
+   "tipo": "resposta",
+   "pergunta": "Posso atravessar de carro uma rua alagada?",
+   "saida": {
+    "resposta": "Não. Nunca atravesse pontes, ruas ou avenidas alagadas, mesmo estando de carro, moto ou bicicleta, pois a força da água poderá arrastá-lo.",
+    "fonte_id": "alagamentos_mdr-17",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 2,
+   "tipo": "resposta",
+   "pergunta": "Como descubro se minha casa está em área de risco?",
+   "saida": {
+    "resposta": "Procure a Prefeitura para saber se sua casa está em área de risco.",
+    "fonte_id": "alagamentos_mdr-01",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 3,
+   "tipo": "resposta",
+   "pergunta": "O que devo fazer com meus documentos se houver risco de alagamento?",
+   "saida": {
+    "resposta": "Se houver risco de alagamentos ou inundações, coloque documentos e objetos de valor em sacos plásticos bem fechados e em local protegido e de fácil acesso em caso de evacuação.",
+    "fonte_id": "alagamentos_mdr-06",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 4,
+   "tipo": "resposta",
+   "pergunta": "Posso usar velas ou lamparinas durante a enchente?",
+   "saida": {
+    "resposta": "Não. Não use velas ou lamparinas devido ao risco de incêndio.",
+    "fonte_id": "alagamentos_mdr-11",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 5,
+   "tipo": "resposta",
+   "pergunta": "Qual o telefone da Defesa Civil?",
+   "saida": {
+    "resposta": "Defesa Civil: 199",
+    "fonte_id": "alagamentos_mdr-tel",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 6,
+   "tipo": "resposta",
+   "pergunta": "Quais os principais sintomas da leptospirose?",
+   "saida": {
+    "resposta": "Os principais sintomas envolvem febre, dor de cabeça, dores pelo corpo, principalmente nas panturrilhas, podendo também ocorrer vômitos, diarreia e tosse.",
+    "fonte_id": "lepto_medidas-13",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 7,
+   "tipo": "resposta",
+   "pergunta": "Como tratar a água antes de beber depois da enchente?",
+   "saida": {
+    "resposta": "Tratar a água antes do consumo, fervendo ou utilizando hipoclorito de sódio.",
+    "fonte_id": "lepto_medidas-09",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 8,
+   "tipo": "resposta",
+   "pergunta": "Posso usar um aparelho elétrico que ficou molhado?",
+   "saida": {
+    "resposta": "Não. Não use equipamentos elétricos que tenham sido molhados ou que estiveram em locais alagados, pois há risco de choque elétrico e curto-circuito.",
+    "fonte_id": "alagamentos_mdr-28",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 9,
+   "tipo": "resposta",
+   "pergunta": "Quando devo voltar para casa depois do alagamento?",
+   "saida": {
+    "resposta": "Volte para casa durante a luz do dia.",
+    "fonte_id": "alagamentos_mdr-29",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 10,
+   "tipo": "resposta",
+   "pergunta": "O que colocar no kit de emergência para sair de casa rápido?",
+   "saida": {
+    "resposta": "Monte um kit com água potável, roupas e remédios",
+    "fonte_id": "alagamentos_mdr-12",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 11,
+   "tipo": "resposta",
+   "pergunta": "O que é um alagamento?",
+   "saida": {
+    "resposta": "Os alagamentos são caracterizados pela extrapolação da capacidade de escoamento de sistemas de drenagem urbana e consequente acúmulo de água em ruas, calçadas ou outras infraestruturas urbanas, em decorrência de chuvas intensas.",
+    "fonte_id": "autoprotecao-03",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 12,
+   "tipo": "resposta",
+   "pergunta": "Qual a diferença entre inundação e enxurrada?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 13,
+   "tipo": "resposta",
+   "pergunta": "Como evitar roedores depois da enchente?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 14,
+   "tipo": "resposta",
+   "pergunta": "O que fazer com alimentos que tiveram contato com a água da enchente?",
+   "saida": {
+    "resposta": "Descarte alimentos que tiveram contato com a água da inundação.",
+    "fonte_id": "lepto_como_proteger-04",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 15,
+   "tipo": "resposta",
+   "pergunta": "Devo confiar em mensagens sobre a enchente que recebo nas redes sociais?",
+   "saida": {
+    "resposta": "Não. Desconfie das mensagens não-oficiais divulgadas nas redes sociais.",
+    "fonte_id": "alagamentos_mdr-35",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 16,
+   "tipo": "resposta",
+   "pergunta": "Estou no trânsito e há alagamentos. Como escolho a rota?",
+   "saida": {
+    "resposta": "Se estiver no trânsito, utilize os serviços de rádio ou de aplicativos para traçar as rotas que evitem áreas alagadas.",
+    "fonte_id": "alagamentos_mdr-19",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 17,
+   "tipo": "resposta",
+   "pergunta": "Quem precisa de ajuda extra durante o alagamento?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "ferramenta": "buscar",
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": false,
+   "ok": false,
+   "alucinou": false
+  },
+  {
+   "caso": 18,
+   "tipo": "resposta",
+   "pergunta": "Como limpar a casa depois que a água baixa?",
+   "saida": {
+    "resposta": "Após as águas baixarem, retire a lama e desinfete pisos, paredes e bancadas com água sanitária.",
+    "fonte_id": "lepto_como_proteger-02",
+    "recusa": false,
+    "ferramenta": "buscar"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 19,
+   "tipo": "nao_consta",
+   "pergunta": "Quantos centímetros de água conseguem arrastar um carro?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "ferramenta": "buscar",
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 20,
+   "tipo": "nao_consta",
+   "pergunta": "Qual é a multa por dirigir em uma rua alagada?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "ferramenta": "buscar",
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 21,
+   "tipo": "nao_consta",
+   "pergunta": "Qual a previsão de chuva para o próximo mês?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "ferramenta": "buscar",
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 22,
+   "tipo": "nao_consta",
+   "pergunta": "O que fazer em caso de deslizamento de terra?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "ferramenta": "buscar",
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 23,
+   "tipo": "nao_consta",
+   "pergunta": "O seguro do carro cobre danos causados por enchente?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "ferramenta": "buscar",
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 24,
+   "tipo": "nao_consta",
+   "pergunta": "Existe vacina contra a leptospirose para humanos?",
+   "saida": {
+    "resposta": "Não consta na base de orientações.",
+    "fonte_id": null,
+    "recusa": true,
+    "ferramenta": "buscar",
+    "motivo": "abaixo do limiar"
+   },
+   "json_valido": true,
+   "recusou": true,
+   "citou_certo": null,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 25,
+   "tipo": "ferramenta",
+   "pergunta": "Qual o risco de chuva agora na região da Mooca?",
+   "saida": {
+    "resposta": "O risco de chuva agora em Mooca é baixo (0.0 mm em 3 h).",
+    "fonte_id": "alertas.json",
+    "recusa": false,
+    "ferramenta": "consultar_risco"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 26,
+   "tipo": "ferramenta",
+   "pergunta": "Como está o risco de chuva em Pinheiros neste momento?",
+   "saida": {
+    "resposta": "O risco de chuva agora em Pinheiros é baixo (0.2 mm em 3 h).",
+    "fonte_id": "alertas.json",
+    "recusa": false,
+    "ferramenta": "consultar_risco"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  },
+  {
+   "caso": 27,
+   "tipo": "ferramenta",
+   "pergunta": "O risco de chuva no Tatuapé está alto agora?",
+   "saida": {
+    "resposta": "O risco de chuva agora em Tatuapé é baixo (0.2 mm em 3 h).",
+    "fonte_id": "alertas.json",
+    "recusa": false,
+    "ferramenta": "consultar_risco"
+   },
+   "json_valido": true,
+   "recusou": false,
+   "citou_certo": true,
+   "ok": true,
+   "alucinou": false
+  }
+ ]
+}

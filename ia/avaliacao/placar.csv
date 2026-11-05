@@ -1,0 +1,4 @@
+,acertos (%),acerto com fonte certa (%),alucinações (%),JSON válido (%),citação certa (%),recusa correta (%)
+A sem contexto,30,0,44,100,0,0
+B RAG simples,78,78,0,100,71,100
+C RAG + agente,89,89,0,100,86,100

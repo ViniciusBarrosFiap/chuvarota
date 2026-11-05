@@ -6,3 +6,4 @@ __pycache__/
 .env
 dados/chegada/
 airflow_home/
+.venv-ia/
