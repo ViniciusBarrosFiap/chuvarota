@@ -1,0 +1,24 @@
+# az webapp show (config de segurança)
+{
+  "apenasHttps": true,
+  "app": "chuvarota-85ixn",
+  "estado": "Running",
+  "host": "chuvarota-85ixn.azurewebsites.net",
+  "plano": "Free"
+}
+{
+  "alwaysOn": false,
+  "ftps": "Disabled",
+  "imagem": "DOCKER|ghcr.io/viniciusbarrosfiap/chuvarota-mvp:7028a1c5c9a97b6421d3e9179f2fcaf5af8ac3b9",
+  "tlsMinimo": "1.2"
+}
+Tipo                       Nome
+-------------------------  ---------------
+Microsoft.Web/serverFarms  plan-chuvarota
+Microsoft.Web/sites        chuvarota-85ixn
+
+{
+  "camada": "Free",
+  "plano": "plan-chuvarota",
+  "sku": "F1"
+}

@@ -1,0 +1,3 @@
+app = "chuvarota-85ixn"
+grupo_de_recursos = "rg-chuvarota"
+url_do_mvp = "https://chuvarota-85ixn.azurewebsites.net"
