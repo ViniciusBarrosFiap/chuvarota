@@ -1,0 +1,13 @@
+.git
+.github
+.venv*
+airflow_home
+dados
+ia
+rpa
+maker
+infra
+monitoring
+**/__pycache__
+**/test_*.py
+*.md

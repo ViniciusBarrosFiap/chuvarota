@@ -1,0 +1,7 @@
+# docker
+imagem chuvarota-mvp:latest  tamanho 169MB
+uid=10001(app) gid=999(app) groups=999(app)
+usuário da imagem: app  porta: map[8000/tcp:{}]
+PYTHONDONTWRITEBYTECODE=1
+PYTHONUNBUFFERED=1
+
