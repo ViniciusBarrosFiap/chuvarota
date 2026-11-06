@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 520" font-family="Helvetica, Arial, sans-serif" font-size="12">
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#222"/></marker></defs>
+<g stroke="#222" stroke-width="1.5">
+<rect x="340" y="60" width="280" height="330" rx="8" fill="#e7f6e7"/>
+<rect x="40" y="60" width="200" height="140" rx="8" fill="#fff4e0"/>
+<rect x="40" y="260" width="130" height="60" rx="6" fill="#fff"/>
+<rect x="230" y="260" width="110" height="60" rx="6" fill="#fff"/>
+<rect x="715" y="60" width="255" height="80" rx="8" fill="#eef3fb"/>
+<rect x="715" y="190" width="255" height="90" rx="8" fill="#eef3fb"/>
+<rect x="715" y="330" width="255" height="70" rx="8" fill="#eef3fb"/>
+<rect x="250" y="420" width="140" height="60" rx="6" fill="#f2f2f2"/>
+</g>
+<g fill="#111" text-anchor="middle">
+<text x="480" y="85" font-weight="bold">ESP32 DevKit</text>
+<text x="480" y="125" font-size="11">GPIO25 ENA · GPIO26 IN1 · GPIO27 IN2</text>
+<text x="480" y="145" font-size="11">GPIO13 ENB · GPIO32 IN3 · GPIO33 IN4</text>
+<text x="480" y="175" font-size="11">GPIO5 TRIG · GPIO18 ECHO (com divisor)</text>
+<text x="480" y="205" font-size="11">GPIO34 LDR (ADC1)</text>
+<text x="480" y="235" font-size="11">GPIO23 buzzer · GPIO2 LED</text>
+<text x="480" y="275" font-size="11">VIN = 5 V do L298N · GND comum</text>
+<text x="480" y="330" font-size="11" fill="#555">Wi-Fi: envia ao MVP (HTTPS, X-Token)</text>
+<text x="480" y="350" font-size="11" fill="#555">TinyML: classifica luz + distância</text>
+<text x="140" y="85" font-weight="bold">Ponte H L298N</text>
+<text x="140" y="110" font-size="11">ENA/IN1/IN2 → motor esquerdo</text><text x="140" y="128" font-size="11">ENB/IN3/IN4 → motor direito</text>
+<text x="140" y="150" font-size="11">12V ← bateria · saída 5V → ESP32</text><text x="140" y="170" font-size="11">GND comum com o ESP32</text>
+<text x="105" y="285" font-weight="bold">Motores TT</text><text x="105" y="303" font-size="11">2 rodas (esq. e dir.)</text>
+<text x="285" y="285" font-weight="bold">Bateria</text><text x="285" y="303" font-size="10">6 a 9 V</text>
+<text x="842" y="85" font-weight="bold">HC-SR04 (distância)</text><text x="842" y="105" font-size="11">VCC 5 V · GND · TRIG → GPIO5</text><text x="842" y="123" font-size="11">ECHO → divisor 1k/2k → GPIO18</text>
+<text x="842" y="215" font-weight="bold">LDR (luminosidade) — sensor novo</text><text x="842" y="235" font-size="11">3,3 V — LDR — GPIO34 — 10 kΩ — GND</text><text x="842" y="253" font-size="11">mais luz = valor maior (0 a 4095)</text>
+<text x="842" y="355" font-weight="bold">Buzzer ativo</text><text x="842" y="375" font-size="11">GPIO23 → buzzer → GND</text>
+<text x="320" y="445" font-weight="bold">Divisor do ECHO</text><text x="320" y="463" font-size="11">1 kΩ e 2 kΩ: 5 V → 3,3 V</text>
+</g>
+<g stroke="#222" stroke-width="1.5" fill="none" marker-end="url(#a)">
+<path d="M240 130 L340 130"/><path d="M240 190 L340 270" stroke-dasharray="4 3"/>
+<path d="M105 200 L105 260"/><path d="M230 290 L195 200"/>
+<path d="M620 175 L715 110"/><path d="M620 205 L715 235"/><path d="M620 235 L715 365"/>
+<path d="M390 450 L450 390" stroke-dasharray="4 3"/>
+</g>
+<text x="290" y="123" text-anchor="middle" font-size="10" fill="#555">comandos</text>
+<text x="300" y="228" text-anchor="middle" font-size="10" fill="#555">5 V</text>
+</svg>

@@ -42,6 +42,7 @@ resource "azurerm_linux_web_app" "mvp" {
   app_settings = {
     WEBSITES_PORT                       = "8000"
     WEBSITES_ENABLE_APP_SERVICE_STORAGE = "false"
+    ROBO_TOKEN                          = var.robo_token
   }
 
   # a imagem passa a ser atualizada pelo pipeline

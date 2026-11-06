@@ -9,7 +9,8 @@
   table { border-collapse: collapse; width: 100%; margin-bottom: 24px; }
   th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ccc; }
   .alto { color: #b00020; font-weight: bold; }
-  .medio { color: #8a5a00; font-weight: bold; }
+  .medio, .pouca_luz, .obstaculo { color: #8a5a00; font-weight: bold; }
+  .escuro_e_obstaculo { color: #b00020; font-weight: bold; }
   @media (prefers-color-scheme: dark) { body { background: #111; color: #eee; } th, td { border-color: #444; } .alto { color: #ff6b81; } .medio { color: #ffc266; } }
 </style>
 </head>
@@ -22,6 +23,9 @@
 
 <h2>Histórico (tabela Ouro: ouro_mvp)</h2>
 <table><thead><tr><th>Região</th><th>Chuva total (mm)</th><th>Horas de risco alto</th></tr></thead><tbody id="historico"><tr><td colspan="3">Carregando...</td></tr></tbody></table>
+
+<h2>Robô nas ruas (últimas leituras)</h2>
+<table><thead><tr><th>Hora</th><th>Luz (%)</th><th>Distância (cm)</th><th>Situação</th></tr></thead><tbody id="robo"><tr><td colspan="4">Carregando...</td></tr></tbody></table>
 
 <script>
 function linhas(id, rows, cols, classe) {
@@ -38,10 +42,14 @@ function linhas(id, rows, cols, classe) {
     tb.appendChild(tr);
   }
 }
+function hora(r) { return { ...r, hora: new Date(r.t * 1000).toLocaleTimeString("pt-BR") }; }
 function erro(id) { document.getElementById(id).innerHTML = "<tr><td colspan='3'>Sem dados no momento.</td></tr>"; }
 
 fetch("/alertas").then(r => r.ok ? r.json() : Promise.reject())
   .then(d => linhas("alertas", d.alertas, ["regiao", "mm_3h", "risco"], "risco")).catch(() => erro("alertas"));
+fetch("/robo").then(r => r.ok ? r.json() : Promise.reject())
+  .then(d => d.length ? linhas("robo", d.map(hora), ["hora", "luz_pct", "distancia_cm", "situacao"], "situacao") : Promise.reject())
+  .catch(() => { document.getElementById("robo").innerHTML = "<tr><td colspan='4'>Nenhuma leitura do robô ainda.</td></tr>"; });
 fetch("/historico").then(r => r.ok ? r.json() : Promise.reject())
   .then(d => linhas("historico", d, ["regiao", "chuva_total_mm", "horas_risco_alto"])).catch(() => erro("historico"));
 </script>

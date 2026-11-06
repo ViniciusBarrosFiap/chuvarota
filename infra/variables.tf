@@ -19,3 +19,9 @@ variable "imagem" {
   default     = "viniciusbarrosfiap/chuvarota-mvp:latest"
   description = "Imagem do MVP no GitHub Container Registry (ghcr.io)"
 }
+
+variable "robo_token" {
+  type        = string
+  sensitive   = true
+  description = "Token que o robô manda no cabeçalho X-Token (vem do terraform.tfvars, fora do Git)"
+}

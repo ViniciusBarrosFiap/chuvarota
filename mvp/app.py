@@ -1,7 +1,8 @@
-"""MVP ChuvaRota: le alertas gerados pela RPA e recebe leituras do sensor do robo."""
-import csv, json, time
+"""MVP ChuvaRota: le alertas gerados pela RPA e recebe as leituras do robô."""
+import csv, json, os, secrets, time
+from typing import Literal
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 from pydantic import BaseModel, Field
@@ -30,12 +31,14 @@ async def metricas(request: Request, call_next):
         DURACAO.labels(path).observe(time.perf_counter() - inicio)
 
 DADOS = Path(__file__).parent / "data" / "alertas.json"
-leituras: list = []  # shortcut: memoria efemera; trocar por banco/KV se for alem da demo
+TOKEN_ROBO = os.environ.get("ROBO_TOKEN", "")
+robo: list = []  # shortcut: fica na memória e some ao reiniciar; trocar por banco se for além da demo
 
 
-class Leitura(BaseModel):
-    sensor: str = Field(max_length=32)
-    valor: float = Field(ge=0, le=100)  # 0-100 (% de umidade/nivel)
+class LeituraRobo(BaseModel):
+    luz_pct: float = Field(ge=0, le=100)
+    distancia_cm: float = Field(ge=0, le=400)
+    situacao: Literal["ok", "pouca_luz", "obstaculo", "escuro_e_obstaculo"]
 
 
 @app.get("/")
@@ -69,8 +72,17 @@ def historico():
         return list(csv.DictReader(f))
 
 
-@app.post("/leituras", status_code=201)
-def nova_leitura(l: Leitura):
-    leituras.append({"t": time.time(), **l.model_dump()})
-    del leituras[:-100]
-    return {"risco_local": "alto" if l.valor >= 60 else "baixo"}
+@app.post("/robo", status_code=201)
+def nova_leitura(l: LeituraRobo, x_token: str = Header(default="")):
+    if not TOKEN_ROBO:
+        raise HTTPException(503, "recebimento do robô desativado")
+    if not secrets.compare_digest(x_token.encode(), TOKEN_ROBO.encode()):
+        raise HTTPException(401, "token inválido")
+    robo.append({"t": time.time(), **l.model_dump()})
+    del robo[:-50]
+    return {"ok": True}
+
+
+@app.get("/robo")
+def ultimas_leituras():
+    return robo[-20:][::-1]

@@ -1,10 +1,33 @@
 from fastapi.testclient import TestClient
+import app as app_mod
 from app import app
 c = TestClient(app)
 
 def test_health(): assert c.get("/health").json() == {"status": "ok"}
-def test_leitura_ok(): assert c.post("/leituras", json={"sensor": "chuva", "valor": 70}).json()["risco_local"] == "alto"
-def test_leitura_invalida(): assert c.post("/leituras", json={"sensor": "chuva", "valor": 500}).status_code == 422
+LEITURA = {"luz_pct": 12, "distancia_cm": 20, "situacao": "escuro_e_obstaculo"}
+
+
+def test_robo_desativado_sem_token_configurado(monkeypatch):
+    monkeypatch.setattr(app_mod, "TOKEN_ROBO", "")
+    assert c.post("/robo", json=LEITURA, headers={"X-Token": "x"}).status_code == 503
+
+
+def test_robo_token_errado_ou_ausente(monkeypatch):
+    monkeypatch.setattr(app_mod, "TOKEN_ROBO", "segredo")
+    assert c.post("/robo", json=LEITURA).status_code == 401
+    assert c.post("/robo", json=LEITURA, headers={"X-Token": "outro"}).status_code == 401
+
+
+def test_robo_leitura_valida_aparece_na_lista(monkeypatch):
+    monkeypatch.setattr(app_mod, "TOKEN_ROBO", "segredo")
+    assert c.post("/robo", json=LEITURA, headers={"X-Token": "segredo"}).status_code == 201
+    assert c.get("/robo").json()[0]["situacao"] == "escuro_e_obstaculo"
+
+
+def test_robo_leitura_invalida(monkeypatch):
+    monkeypatch.setattr(app_mod, "TOKEN_ROBO", "segredo")
+    assert c.post("/robo", json={**LEITURA, "situacao": "qualquer"}, headers={"X-Token": "segredo"}).status_code == 422
+    assert c.post("/robo", json={**LEITURA, "luz_pct": 500}, headers={"X-Token": "segredo"}).status_code == 422
 
 def test_historico():
     r = c.get("/historico")
