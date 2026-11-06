@@ -7,6 +7,7 @@ REPO = "https://github.com/ViniciusBarrosFiap/chuvarota"
 URL = "https://chuvarota-85ixn.azurewebsites.net"
 BARRADA = REPO + "/actions/runs/41960832140"
 CORRIGIDA = REPO + "/actions/runs/41961124580"
+DEPLOY = REPO + "/actions/runs/42147987320"
 AQUI = Path(__file__).resolve().parent
 EV = AQUI / "evidencias"
 
@@ -76,6 +77,10 @@ Repositório: <a href="{REPO}">{REPO}</a> (<code>Dockerfile</code>, <code>compos
 <h3>4.2 Execução corrigida</h3>
 <p>Corrigi o Dockerfile (<code>apt-get upgrade</code>) e o mesmo pipeline passou em todas as etapas. <a href="{CORRIGIDA}">{CORRIGIDA}</a></p>
 {img("pipeline_corrigida.png", "Execução corrigida: todas as etapas de segurança aprovadas.", "80%")}
+
+<h3>4.3 Deploy automático</h3>
+<p>Com a credencial em GitHub Secrets, o mesmo pipeline publicou a imagem no ghcr.io e atualizou o App Service sozinho, terminando com o teste de fumaça em <code>/health</code>. <a href="{DEPLOY}">{DEPLOY}</a></p>
+{img("pipeline_deploy.png", "Execução com deploy: todas as etapas aprovadas, inclusive publicar e deploy.", "80%")}
 
 <h2>5. Observabilidade</h2>
 <p>O MVP expõe <code>/metrics</code>. O Prometheus e o Grafana rodam localmente (<code>docker compose -f monitoring/compose.publicado.yml up</code>) e apontam para o <b>MVP publicado</b> no Azure, coletando a cada 15 segundos.</p>
