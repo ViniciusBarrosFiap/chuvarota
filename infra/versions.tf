@@ -9,4 +9,6 @@ terraform {
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
+  # a assinatura de estudante só permite alguns provedores; não tenta registrar os outros
+  resource_provider_registrations = "none"
 }

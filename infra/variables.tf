@@ -8,8 +8,14 @@ variable "regiao" {
   default = "brazilsouth"
 }
 
+variable "sku" {
+  type        = string
+  default     = "F1"
+  description = "Plano do App Service: F1 é gratuito; B1 custa cerca de US$ 13 por mês"
+}
+
 variable "imagem" {
   type        = string
-  default     = ""
-  description = "Imagem do MVP no ACR. Vazio na primeira etapa, quando o registro ainda não tem imagem."
+  default     = "viniciusbarrosfiap/chuvarota-mvp:latest"
+  description = "Imagem do MVP no GitHub Container Registry (ghcr.io)"
 }

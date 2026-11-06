@@ -1,5 +1,5 @@
 resource "random_string" "sufixo" {
-  length  = 6
+  length  = 5
   upper   = false
   special = false
 }
@@ -9,94 +9,43 @@ resource "azurerm_resource_group" "rg" {
   location = var.regiao
 }
 
-# registro de imagens: sem usuário admin, o acesso é por identidade
-resource "azurerm_container_registry" "acr" {
-  name                = "chuvarota${random_string.sufixo.result}"
+resource "azurerm_service_plan" "plano" {
+  name                = "plan-chuvarota"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  sku                 = "Basic"
-  admin_enabled       = false
+  os_type             = "Linux"
+  sku_name            = var.sku
 }
 
-resource "azurerm_log_analytics_workspace" "logs" {
-  name                = "log-chuvarota"
+resource "azurerm_linux_web_app" "mvp" {
+  name                = "chuvarota-${random_string.sufixo.result}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
-}
+  service_plan_id     = azurerm_service_plan.plano.id
 
-resource "azurerm_container_app_environment" "env" {
-  name                       = "cae-chuvarota"
-  resource_group_name        = azurerm_resource_group.rg.name
-  location                   = azurerm_resource_group.rg.location
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.logs.id
-}
+  # só HTTPS, e sem as portas de publicação por usuário e senha (FTP e Web Deploy)
+  https_only                                     = true
+  ftp_publish_basic_authentication_enabled       = false
+  webdeploy_publish_basic_authentication_enabled = false
 
-resource "azurerm_user_assigned_identity" "app" {
-  name                = "id-chuvarota-mvp"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-}
+  site_config {
+    always_on           = var.sku != "F1" # o plano gratuito não aceita
+    ftps_state          = "Disabled"
+    minimum_tls_version = "1.2"
 
-resource "azurerm_role_assignment" "puxar_imagem" {
-  scope                = azurerm_container_registry.acr.id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_user_assigned_identity.app.principal_id
-}
-
-# só existe depois que há uma imagem no registro
-resource "azurerm_container_app" "mvp" {
-  count                        = var.imagem == "" ? 0 : 1
-  name                         = "chuvarota-mvp"
-  resource_group_name          = azurerm_resource_group.rg.name
-  container_app_environment_id = azurerm_container_app_environment.env.id
-  revision_mode                = "Single"
-
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.app.id]
-  }
-
-  registry {
-    server   = azurerm_container_registry.acr.login_server
-    identity = azurerm_user_assigned_identity.app.id
-  }
-
-  template {
-    min_replicas = 1
-    max_replicas = 2
-
-    container {
-      name   = "mvp"
-      image  = var.imagem
-      cpu    = 0.25
-      memory = "0.5Gi"
-
-      liveness_probe {
-        transport = "HTTP"
-        port      = 8000
-        path      = "/health"
-      }
+    application_stack {
+      docker_image_name   = var.imagem
+      docker_registry_url = "https://ghcr.io"
     }
   }
 
-  # a única porta exposta é a 443 (HTTPS) do MVP; não existe porta de administração
-  ingress {
-    external_enabled           = true
-    target_port                = 8000
-    allow_insecure_connections = false
-
-    traffic_weight {
-      latest_revision = true
-      percentage      = 100
-    }
+  app_settings = {
+    WEBSITES_PORT                       = "8000"
+    WEBSITES_ENABLE_APP_SERVICE_STORAGE = "false"
   }
 
   # a imagem passa a ser atualizada pelo pipeline
   lifecycle {
-    ignore_changes = [template[0].container[0].image]
+    ignore_changes = [site_config[0].application_stack]
   }
-
-  depends_on = [azurerm_role_assignment.puxar_imagem]
 }
