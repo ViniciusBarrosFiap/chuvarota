@@ -22,6 +22,8 @@ def test_robo_leitura_valida_aparece_na_lista(monkeypatch):
     monkeypatch.setattr(app_mod, "TOKEN_ROBO", "segredo")
     assert c.post("/robo", json=LEITURA, headers={"X-Token": "segredo"}).status_code == 201
     assert c.get("/robo").json()[0]["situacao"] == "escuro_e_obstaculo"
+    c.post("/robo", json={**LEITURA, "situacao": "luz_piscando"}, headers={"X-Token": "segredo"})
+    assert c.get("/robo").json()[0]["situacao"] == "luz_piscando"
 
 
 def test_robo_leitura_invalida(monkeypatch):

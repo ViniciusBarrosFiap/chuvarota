@@ -20,7 +20,7 @@ float distancia() {
   digitalWrite(TRIG, HIGH);
   delayMicroseconds(10);
   digitalWrite(TRIG, LOW);
-  long us = pulseIn(ECHO, HIGH, 25000);
+  long us = pulseIn(ECHO, HIGH, 12000);
   return us == 0 ? -1 : us / 58.0f;
 }
 

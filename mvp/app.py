@@ -38,7 +38,7 @@ robo: list = []  # shortcut: fica na memória e some ao reiniciar; trocar por ba
 class LeituraRobo(BaseModel):
     luz_pct: float = Field(ge=0, le=100)
     distancia_cm: float = Field(ge=0, le=400)
-    situacao: Literal["ok", "pouca_luz", "obstaculo", "escuro_e_obstaculo"]
+    situacao: Literal["ok", "pouca_luz", "obstaculo", "escuro_e_obstaculo", "luz_piscando", "objeto_se_aproximando"]
 
 
 @app.get("/")
