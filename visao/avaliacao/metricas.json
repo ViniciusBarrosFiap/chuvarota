@@ -1,0 +1,75 @@
+{
+ "teste": {
+  "imagens": 108
+ },
+ "modelo_customizado": {
+  "mAP50": 0.591,
+  "mAP50-95": 0.405,
+  "precisao": 0.635,
+  "recall": 0.544,
+  "por_classe": {
+   "nivel1_0a20cm": {
+    "AP50": 0.708,
+    "AP50-95": 0.487
+   },
+   "nivel2_20a45cm": {
+    "AP50": 0.546,
+    "AP50-95": 0.383
+   },
+   "nivel3_45a100cm": {
+    "AP50": 0.621,
+    "AP50-95": 0.41
+   },
+   "nivel4_acima_100cm": {
+    "AP50": 0.491,
+    "AP50-95": 0.339
+   }
+  }
+ },
+ "deteccao_de_onibus_customizado": {
+  "verdadeiros_positivos": 120,
+  "falsos_positivos": 40,
+  "falsos_negativos": 48,
+  "precisao": 0.75,
+  "recall": 0.714,
+  "f1": 0.732,
+  "ms_por_imagem": 69.5,
+  "nivel_exato": 0.758,
+  "nivel_com_erro_de_um": 0.983,
+  "matriz_confusao": [
+   [
+    27,
+    7,
+    0,
+    0
+   ],
+   [
+    6,
+    26,
+    3,
+    0
+   ],
+   [
+    0,
+    5,
+    26,
+    0
+   ],
+   [
+    0,
+    2,
+    6,
+    12
+   ]
+  ]
+ },
+ "deteccao_de_onibus_coco_base": {
+  "verdadeiros_positivos": 84,
+  "falsos_positivos": 32,
+  "falsos_negativos": 84,
+  "precisao": 0.724,
+  "recall": 0.5,
+  "f1": 0.592,
+  "ms_por_imagem": 70.3
+ }
+}

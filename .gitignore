@@ -8,3 +8,9 @@ dados/chegada/
 airflow_home/
 .venv-ia/
 .terraform/
+visao/dados_brutos/
+visao/dataset/
+visao/runs/
+visao/data.yaml
+*.pt
+!visao/modelo/best.pt
