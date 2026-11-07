@@ -9,6 +9,8 @@
 // Para usar o seu próprio MVP, defina ROBO_TOKEN lá (infra/variables.tf) e troque o valor aqui.
 #define TOKEN_ROBO "6wsbYPEzUPxyJsi3S_4fvnyJDnlBjxCo"  // gitleaks:allow
 
+// 1 = controle pelo app Dabble (Bluetooth); 0 = sem Bluetooth, o robô só anda sozinho (sobra mais memória para o envio ao MVP)
+#define USAR_DABBLE 1
 // nome que aparece no Bluetooth: no app Dabble, toque em Connect e escolha este nome
 #define NOME_BLUETOOTH "ChuvaRota"
 // 0 = o robô começa dirigido pelo Dabble (triângulo alterna para o modo autônomo); 1 = começa sozinho

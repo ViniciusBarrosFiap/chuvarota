@@ -1,9 +1,13 @@
 // Carro robô ChuvaRota: dirigido pelo app Dabble (Bluetooth) ou sozinho; desvia de obstáculos, mede a luz com o LDR
 // e classifica a situação com um modelo TinyML. Placa: ESP32 DevKit (pacote "esp32" 3.x; partição "Huge APP").
 #include <Arduino.h>
+#include "config.h"
+#if USAR_DABBLE
 #define CUSTOM_SETTINGS
 #define INCLUDE_GAMEPAD_MODULE
 #include <DabbleESP32.h>  // biblioteca "DabbleESP32" (app Dabble)
+#include "esp_bt.h"
+#endif
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <WiFi.h>
@@ -11,7 +15,6 @@
 
 #include "caracteristicas.h"
 #include "cert_raiz.h"
-#include "config.h"
 #include "modelo_tinyml.h"
 
 // motores (ponte H L298N)
@@ -32,7 +35,7 @@ struct Leitura {
 };
 volatile Leitura atual = {1, 200, 0};
 volatile bool urgente = false;
-bool autonomo = MODO_INICIAL;  // 0 = dirigido pelo Dabble, 1 = sozinho (triângulo alterna)
+bool autonomo = USAR_DABBLE ? MODO_INICIAL : 1;  // 0 = dirigido pelo Dabble, 1 = sozinho (triângulo alterna)
 
 // janela das últimas leituras (a mais antiga primeiro)
 float janela_luz[JANELA], janela_dist[JANELA];
@@ -164,6 +167,7 @@ void tarefa_rede(void*) {
   }
 }
 
+#if USAR_DABBLE
 // joystick do Dabble: valores de -7 a 7; as setas valem 1
 void dirigir_manual() {
   float jx = GamePad.getXaxisData(), jy = GamePad.getYaxisData() * (INVERTE_JOYSTICK_Y ? -1 : 1);
@@ -192,6 +196,7 @@ void botoes() {
   }
   digitalWrite(BUZZER, GamePad.isSquarePressed());  // quadrado: buzina
 }
+#endif
 
 void comandos_serial() {
   while (Serial.available()) {
@@ -225,7 +230,12 @@ void setup() {
 #if MODO_COLETA
   Serial.println("luz,distancia_cm,classe  (digite 0 a 5 para escolher a classe)");
 #else
+#if USAR_DABBLE
+  // o Dabble só usa Bluetooth de baixa energia: devolve a memória do Bluetooth clássico para o HTTPS do envio
+  esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
   Dabble.begin(NOME_BLUETOOTH);
+#endif
+  Serial.printf("memória livre na partida: %u bytes (maior bloco %u)\n", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_SENHA);
   xTaskCreatePinnedToCore(tarefa_rede, "rede", 20480, NULL, 1, NULL, 0);
@@ -238,7 +248,7 @@ void loop() {
   static unsigned long ultimo_alerta = 0;
   static int candidata = 0, repeticoes = 0, em_vigor = 0;
   comandos_serial();
-#if !MODO_COLETA
+#if !MODO_COLETA && USAR_DABBLE
   Dabble.processInput();
   botoes();
   if (!autonomo) dirigir_manual();
