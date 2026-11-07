@@ -117,8 +117,10 @@ void enviar(Leitura l) {
   }
   WiFiClientSecure cliente;
   cliente.setCACert(CERT_RAIZ);
+  cliente.setHandshakeTimeout(30);  // a cadeia de certificados do Azure é pesada e o Bluetooth divide a antena: dá tempo
   HTTPClient http;
-  http.setTimeout(5000);
+  http.setConnectTimeout(15000);
+  http.setTimeout(15000);
   if (!http.begin(cliente, URL_MVP)) return;
   http.addHeader("Content-Type", "application/json");
   http.addHeader("X-Token", TOKEN_ROBO);
@@ -126,6 +128,11 @@ void enviar(Leitura l) {
   snprintf(corpo, sizeof(corpo), "{\"luz_pct\":%.0f,\"distancia_cm\":%.0f,\"situacao\":\"%s\"}", l.luz * 100, l.dist, NOMES[l.classe]);
   int codigo = http.POST(corpo);
   Serial.printf("envio: %s -> %d\n", corpo, codigo);
+  if (codigo <= 0) {  // explica a falha: erro do TLS, memória e hora
+    char erro[100] = "";
+    int e = cliente.lastError(erro, sizeof(erro));
+    Serial.printf("  falha: %s | erro TLS %d (%s) | memória livre %u, maior bloco %u | hora %ld | Wi-Fi %d dBm\n", HTTPClient::errorToString(codigo).c_str(), e, erro, ESP.getFreeHeap(), ESP.getMaxAllocHeap(), (long)time(nullptr), WiFi.RSSI());
+  }
   http.end();
 }
 
@@ -221,7 +228,7 @@ void setup() {
   Dabble.begin(NOME_BLUETOOTH);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_SENHA);
-  xTaskCreatePinnedToCore(tarefa_rede, "rede", 12288, NULL, 1, NULL, 0);
+  xTaskCreatePinnedToCore(tarefa_rede, "rede", 20480, NULL, 1, NULL, 0);
   apitar(1);  // pronto
 #endif
 }
