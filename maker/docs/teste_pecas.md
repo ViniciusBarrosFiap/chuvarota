@@ -6,7 +6,7 @@ O firmware, o modelo e a conexão com o MVP já estão prontos. O que falta é l
 1. Instale o Arduino IDE 2. Em **Arduino IDE > Settings > URLs adicionais para o Gerenciador de Placas**, cole `https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
 2. **Ferramentas > Placa > Gerenciador de Placas**, busque `esp32` e instale **"esp32 by Espressif Systems" versão 3.x** (a 2.x não serve: o código usa `ledcAttach`).
 2b. **Ferramentas > Gerenciar Bibliotecas**, busque **DabbleESP32** (de STEMpedia) e instale: é ela que faz o carrinho obedecer ao app Dabble.
-3. **Arquivo > Abrir** e escolha o arquivo `maker/firmware/robo/robo.ino` (o arquivo, não a pasta). O IDE abre abas com `robo.ino`, `caracteristicas.h`, `cert_raiz.h`, `config.h`, `modelo_tinyml.h` e `wifi_local.example.h`.
+3. **Arquivo > Abrir** e escolha o arquivo `maker/firmware/robo/robo.ino` (o arquivo, não a pasta). O IDE abre abas com `robo.ino`, `caracteristicas.h`, `config.h`, `modelo_tinyml.h` e `wifi_local.example.h`.
 4. **Wi-Fi:** copie `wifi_local.example.h` para `wifi_local.h` **na mesma pasta** e preencha o nome e a senha do seu Wi-Fi (2,4 GHz), ou rode `./maker/firmware/configurar.sh`. O token do MVP já vem no `config.h`. O `wifi_local.h` não vai para o Git.
 5. **Ferramentas > Placa > esp32 > ESP32 Dev Module**, **Ferramentas > Partition Scheme > Huge APP (3MB No OTA/1MB SPIFFS)** (obrigatório: sem isso o IDE diz "Sketch too big"), e em **Porta** escolha `/dev/cu.usbserial-...` (se não aparecer, instale o driver CP210x ou CH340 e use um cabo USB de dados).
 6. Clique em **Upload** (seta para a direita). Se aparecer `Connecting........`, segure o botão **BOOT** do ESP32 até começar a gravar.

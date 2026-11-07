@@ -79,11 +79,11 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 `POST /robo` recebe `{luz_pct, distancia_cm, situacao}` com o cabeçalho `X-Token`; `GET /robo` devolve as últimas leituras, que aparecem na tela inicial do MVP: https://chuvarota-85ixn.azurewebsites.net
 
 - O token do robô está em `config.h`, versionado de propósito para quem avaliar poder reproduzir. É um **token de demonstração**: só permite enviar leituras de teste ao MVP de demonstração (`POST /robo`) e não dá acesso a mais nada. No Azure ele é configurado pelo Terraform (`robo_token`); para usar outro MVP, defina outro `ROBO_TOKEN` lá e troque o valor no `config.h`. O **Wi-Fi não vai para o Git**: fica em `wifi_local.h`.
-- O robô valida o certificado do MVP (raiz DigiCert Global Root G2 em `cert_raiz.h`); não desliga a verificação de TLS.
+- A conexão com o MVP é criptografada (HTTPS), mas o robô não confere o certificado do servidor: o ESP32 recusava a cadeia do Azure. Limite aceito para a demo; o token só grava leituras de teste.
 - Não há dado pessoal: só luz, distância e a classe. O MVP guarda as últimas 50 leituras em memória.
 
 ## Pastas
-- `firmware/robo/` firmware do robô (`robo.ino`), `caracteristicas.h`, `modelo_tinyml.h` (gerado), `cert_raiz.h`, `config.h` (token de demonstração e ajustes), `wifi_local.example.h`
+- `firmware/robo/` firmware do robô (`robo.ino`), `caracteristicas.h`, `modelo_tinyml.h` (gerado), `config.h` (token de demonstração e ajustes), `wifi_local.example.h`
 - `firmware/teste_pecas/` sketch para testar cada peça sozinha
 - `firmware/configurar.sh` e `firmware/gravar.sh`
 - `tinyml/` simulador dos sensores, características, treino, testes e coleta de dados reais
