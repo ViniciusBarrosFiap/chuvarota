@@ -8,7 +8,7 @@ Carro robô com ESP32 que anda sozinho, desvia de obstáculos, mede a luz do amb
 
 ## Montar e gravar (resumo)
 1. Ligar as peças como em [docs/ligacao.png](docs/ligacao.png) (pinos e divisor do ECHO em [docs/teste_pecas.md](docs/teste_pecas.md)).
-2. Conectar o ESP32 por USB (cabo de dados) e rodar:
+2. Pelo **Arduino IDE** (passo a passo em [docs/teste_pecas.md](docs/teste_pecas.md)): abrir `maker/firmware/robo/robo.ino`, criar o `config.h` e clicar em Upload. Ou, pelo terminal, com o ESP32 por USB (cabo de dados):
 ```
 ./maker/firmware/configurar.sh     # pergunta o Wi-Fi (2,4 GHz) e cria o config.h com o token do MVP
 ./maker/firmware/gravar.sh         # compila, grava e abre o Monitor Serial
@@ -80,7 +80,7 @@ Autonomia: depois de ligado, o robô não recebe nenhum comando manual.
 - Não há dado pessoal: só luz, distância e a classe. O MVP guarda as últimas 50 leituras em memória.
 
 ## Pastas
-- `firmware/robo/` firmware do robô (`robo.cpp`; o `robo.ino` é só o arquivo principal que o Arduino exige), `caracteristicas.h`, `modelo_tinyml.h` (gerado), `cert_raiz.h`, `config.example.h`
+- `firmware/robo/` firmware do robô (`robo.ino`), `caracteristicas.h`, `modelo_tinyml.h` (gerado), `cert_raiz.h`, `config.example.h`
 - `firmware/teste_pecas/` sketch para testar cada peça sozinha
 - `firmware/configurar.sh` e `firmware/gravar.sh`
 - `tinyml/` simulador dos sensores, características, treino, testes e coleta de dados reais

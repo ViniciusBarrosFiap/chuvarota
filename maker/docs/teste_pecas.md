@@ -2,7 +2,18 @@
 
 O firmware, o modelo e a conexão com o MVP já estão prontos. O que falta é ligar as peças e conferir cada uma. Siga a ordem; se um passo não bater, não vá para o próximo.
 
-## 1. Preparação (uma vez, no Mac)
+## 1. Arduino IDE: abrir e gravar o código
+1. Instale o Arduino IDE 2. Em **Arduino IDE > Settings > URLs adicionais para o Gerenciador de Placas**, cole `https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
+2. **Ferramentas > Placa > Gerenciador de Placas**, busque `esp32` e instale **"esp32 by Espressif Systems" versão 3.x** (a 2.x não serve: o código usa `ledcAttach`).
+3. **Arquivo > Abrir** e escolha o arquivo `maker/firmware/robo/robo.ino` (o arquivo, não a pasta). O IDE abre abas com `robo.ino`, `caracteristicas.h`, `cert_raiz.h`, `config.example.h` e `modelo_tinyml.h`.
+4. Crie o `config.h`: copie `config.example.h` para `config.h` **na mesma pasta** e preencha o Wi-Fi (2,4 GHz) e o token (ou rode `./maker/firmware/configurar.sh`, que faz isso). Sem o `config.h` o IDE mostra o erro "Falta o config.h".
+5. **Ferramentas > Placa > esp32 > ESP32 Dev Module**, e em **Porta** escolha `/dev/cu.usbserial-...` (se não aparecer, instale o driver CP210x ou CH340 e use um cabo USB de dados).
+6. Clique em **Upload** (seta para a direita). Se aparecer `Connecting........`, segure o botão **BOOT** do ESP32 até começar a gravar.
+7. **Ferramentas > Monitor Serial**, velocidade **115200**.
+
+Para testar cada peça antes, abra `maker/firmware/teste_pecas/teste_pecas.ino` do mesmo jeito.
+
+## 1b. Preparação pelo terminal (alternativa, no Mac)
 - `arduino-cli` e o pacote `esp32` 3.x já estão instalados neste Mac. Em outro computador: `arduino-cli core install esp32:esp32 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
 - Driver da placa: se o Mac não enxergar o ESP32 em `/dev/cu.*`, instale o driver CP210x ou CH340 (veja o chip que está escrito na placa). Use um cabo USB **de dados**.
 - `./maker/firmware/configurar.sh` pergunta o Wi-Fi (2,4 GHz) e cria o `config.h` com o token do MVP.
