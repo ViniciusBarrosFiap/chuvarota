@@ -19,6 +19,8 @@ O Dabble é um app gratuito (Android e iOS) que transforma o celular em um contr
 | Setas ou joystick | dirigir (para frente, para trás, virar; no joystick a velocidade acompanha o quanto você empurra) |
 | **Quadrado** | buzina enquanto estiver apertado |
 | **Triângulo** | alterna entre **dirigir pelo Dabble** e **andar sozinho** (apita 1 vez ao ir para manual e 2 vezes ao ir para o autônomo) |
+| **Círculo** | **modo treino**: o robô aprende a andar por tentativa e erro (apita 3 vezes; o LED da placa acende quando ele testa uma ação aleatória) |
+| **Start** | **modo IA**: usa o que aprendeu, sem explorar (apita 4 vezes) |
 | **X** | freia e volta para o controle manual |
 
 ## O que o robô faz enquanto você dirige
@@ -26,8 +28,11 @@ O Dabble é um app gratuito (Android e iOS) que transforma o celular em um contr
 - **IA e sensores continuam ligados:** o LDR e o modelo TinyML classificam o ambiente e enviam as leituras ao MVP. Se detectar **escuro com obstáculo**, apita uma vez e manda o alerta na hora; se a luz estiver **piscando**, avisa o MVP.
 - No modo **autônomo** o robô decide sozinho (anda, desvia, freia diante de algo que se aproxima) até você apertar o X ou o triângulo.
 
+## Comandos no Monitor Serial (115200)
+`a` liga e desliga o treino, `u` liga e desliga a IA, `q` mostra o que ele aprendeu, `e` imprime a curva de aprendizado (CSV), `z` apaga o aprendizado, `i` mostra a calibração do LDR e `r` a apaga. Mais detalhes no [README](../README.md).
+
 ## Ajustes no `config.h`
-- `MODO_INICIAL`: `0` começa dirigido pelo Dabble, `1` começa sozinho.
+- `MODO_INICIAL`: `0` começa dirigido pelo Dabble, `1` autônomo, `2` treino, `3` IA.
 - `INVERTE_JOYSTICK_Y`: se empurrar o joystick para frente fizer o robô ir para trás, troque para `1`.
 - `NOME_BLUETOOTH`: nome que aparece no app.
 

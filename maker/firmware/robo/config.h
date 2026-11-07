@@ -13,7 +13,8 @@
 #define USAR_DABBLE 1
 // nome que aparece no Bluetooth: no app Dabble, toque em Connect e escolha este nome
 #define NOME_BLUETOOTH "ChuvaRota"
-// 0 = o robô começa dirigido pelo Dabble (triângulo alterna para o modo autônomo); 1 = começa sozinho
+// modo em que o robô começa: 0 = dirigido pelo Dabble, 1 = autônomo (regras + TinyML), 2 = treino (aprende por tentativa e erro),
+// 3 = IA (usa o que aprendeu, sem explorar). No Dabble: triângulo = autônomo, círculo = treino, Start = IA, X = volta ao manual
 #define MODO_INICIAL 0
 // se "para frente" no joystick do Dabble fizer o robô ir para trás, troque 0 por 1
 #define INVERTE_JOYSTICK_Y 0
@@ -36,6 +37,13 @@
 // por isso a parada é bem antes da parede. Se ainda bater, aumente DIST_MINIMA_CM ou diminua VELOCIDADE_NORMAL.
 #define DIST_MINIMA_CM 25  // algo mais perto que isso à frente: o robô para e (no autônomo) recua e vira para o lado, mesmo que o modelo erre
 #define DIST_LIVRE_CM 40  // na manobra, só para de girar quando houver pelo menos esta distância livre à frente
+
+// Modo treino (aprendizado por reforço, ver aprendizado.h). A "quase batida" é o único erro que ele pode cometer: o freio de segurança
+// sempre age antes de bater. Dentro de TREINO_DIST_PERIGO_CM ele perde pontos; dentro de TREINO_DIST_FREIO_CM o freio recua o carrinho.
+#define TREINO_DIST_PERIGO_CM 30
+#define TREINO_DIST_FREIO_CM 20
+#define TREINO_CONHECIMENTO_INICIAL 1  // 1 = começa com a regra antiga como palpite fraco (aprende bem mais rápido); 0 = começa do zero
+#define TREINO_APITAR_ERRO 1  // 1 = um "bip" curto a cada freio de segurança, para você ouvir os erros acontecendo
 
 // 1 = robô parado só imprimindo "luz,distancia_cm,classe" a cada 100 ms para coletar dados reais (ver docs/teste_pecas.md)
 #define MODO_COLETA 0

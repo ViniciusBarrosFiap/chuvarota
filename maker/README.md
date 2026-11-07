@@ -75,6 +75,17 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 - `tinyml/testar_c.py` compila o C++ do robô no computador e confere que ele decide **igual** ao Python a partir das leituras brutas (100% de 400 janelas).
 - **Limite importante:** esses números medem o quanto o modelo lida com ruído e falhas que **eu simulei**, não o desempenho no robô. Quando o carrinho estiver montado, o `tinyml/coletar.py` grava dados reais (passos em [docs/teste_pecas.md](docs/teste_pecas.md)) e o `treinar.py` passa a usá-los automaticamente.
 
+## Modo treino e modo IA (aprendizado por reforço)
+Além do TinyML (que **classifica** a situação), o robô tem um segundo tipo de IA que **aprende por tentativa e erro** a andar no ambiente em que está (`firmware/robo/aprendizado.h`, Q-learning):
+- **Treino** (botão **círculo** no Dabble, ou `a` no Monitor Serial): a cada 0,1 s ele olha a distância (em 6 faixas, mais se está se aproximando ou se afastando e o que fez por último), escolhe uma ação (frente, frente devagar, girar à esquerda, girar à direita ou ré) e recebe uma nota no ciclo seguinte: ganha pontos andando livre e perde ao chegar perto de uma parede ou ao mandar andar e não sair do lugar. Com isso atualiza uma tabela de 72 situações x 5 ações. No começo ele testa ações aleatórias (o **LED da placa acende** nesses ciclos) e vai testando menos. Cada **freio de segurança** (algo a menos de 20 cm) é um erro e faz um bip curto: dá para ouvir os erros diminuindo.
+- **IA** (botão **Start**, ou `u`): usa a tabela aprendida sem explorar e sem mudar nada.
+- A tabela fica na **memória flash** (continua depois de desligar). `q` mostra a melhor ação aprendida para cada situação, `e` imprime a curva de aprendizado em CSV e `z` apaga tudo (use ao levar o carrinho para um ambiente novo). A cada 300 passos o Monitor Serial mostra `treino: bloco N | exploração | nota média | quase-batidas | freios`.
+- **Segurança:** o freio (recua um pouco) e a fuga de cantos (5 freios em 30 ciclos, ou mandar andar e a distância não mudar por 3 ciclos) **não são aprendidos**: valem mais que o agente. Todos os modos também usam o filtro "sem eco logo depois de algo perto = obstáculo".
+- **O que ele aprende e o que não aprende:** o carrinho tem um sensor só, olhando para frente, e nada que meça o quanto andou. Ele aprende **reflexos** para o ambiente (o que fazer ao ver uma parede a tantos cm), e **não faz um mapa** do lugar. O carrinho só sabe que errou quando algo chega perto, então o treino precisa de um espaço onde ele possa errar sem se machucar (uns 10 a 20 minutos).
+- **Resultado na simulação** (`python maker/tinyml/simular_treino.py`: salas retangulares com obstáculos, o mesmo código do robô, 3 treinos de 60 mil passos, avaliação em 100 salas novas por treino): comparado ao modo autônomo antigo (regras fixas), o agente treinado precisou de **cerca de 5 vezes menos freios de segurança** (28 contra 140 por sala de 600 ciclos), **andou 4,7 vezes mais** (1.800 contra 380 cm) e **visitou 4 vezes mais cantos da sala**. A maior parte da melhora vem nos primeiros 5 mil passos. Ele **ainda raspa em paredes** (56 ciclos com o movimento barrado por sala, contra 371 nas regras antigas e 21 nas regras com o detector de travamento), porque o sensor não enxerga de lado. Esses números são da **simulação**: no carrinho real ainda não foram medidos.
+
+![treino simulado](tinyml/treino_simulado.png)
+
 ## Integração com o MVP
 `POST /robo` recebe `{luz_pct, distancia_cm, situacao}` com o cabeçalho `X-Token`; `GET /robo` devolve as últimas leituras, que aparecem na tela inicial do MVP: https://chuvarota-85ixn.azurewebsites.net
 
@@ -83,15 +94,17 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 - Não há dado pessoal: só luz, distância e a classe. O MVP guarda as últimas 50 leituras em memória.
 
 ## Pastas
-- `firmware/robo/` firmware do robô (`robo.ino`), `caracteristicas.h`, `modelo_tinyml.h` (gerado), `config.h` (token de demonstração e ajustes), `wifi_local.example.h`
+- `firmware/robo/` firmware do robô (`robo.ino`), `caracteristicas.h`, `modelo_tinyml.h` (gerado), `aprendizado.h` (Q-learning dos modos treino e IA), `seguranca.h` (filtro da distância e detector de travamento), `direcao.h` (setas e joystick do Dabble), `config.h` (token de demonstração e ajustes), `wifi_local.example.h`
 - `firmware/teste_pecas/` sketch para testar cada peça sozinha
 - `firmware/configurar.sh` e `firmware/gravar.sh`
-- `tinyml/` simulador dos sensores, características, treino, testes e coleta de dados reais
+- `tinyml/` simulador dos sensores, características, treino, testes e coleta de dados reais; `mundo_treino.cpp` e `simular_treino.py` (salas simuladas para o modo treino)
 - `simulador/` finge ser o robô para testar o endpoint do MVP
 - `docs/` montagem fio a fio, controle pelo Dabble, esquema de ligação e testes de bancada
 
 ## Testes
 - `python maker/tinyml/testar_c.py`: o C++ decide igual ao Python.
+- `python maker/tinyml/testar_aprendizado.py`: regras do Q-learning (estados, notas, freio, fuga, tamanho na memória flash).
+- `python maker/tinyml/simular_treino.py`: o agente aprende em salas simuladas e erra menos que as regras fixas (gera `treino_simulado.png`).
 - `python maker/tinyml/testar_seguranca.py`: o filtro da distância trata "sem eco" logo depois de algo perto como obstáculo.
 - `python maker/tinyml/testar_direcao.py`: as setas e o joystick do Dabble viram o movimento certo das rodas (cima = frente, baixo = trás, esquerda e direita = virar para o lado).
 - `arduino-cli compile --fqbn esp32:esp32:esp32 maker/firmware/robo` (com um `config.h`): compila.

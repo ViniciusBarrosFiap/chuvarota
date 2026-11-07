@@ -27,3 +27,29 @@ struct FiltroDistancia {
     sem_eco = 0;
   }
 };
+
+// O sensor só enxerga reto, mas o corpo do carrinho é largo: ao passar de raspão por uma parede ele encosta, as rodas patinam e a
+// distância lida quase não muda enquanto o robô "anda". Andando livre, a distância muda uns 15 cm a cada 3 ciclos. Se mandou andar
+// por 3 ciclos seguidos e a distância mudou menos de 3 cm, ele está preso. Só vale com eco (abaixo de 190 cm).
+struct DetectorTravado {
+  float hist[4] = {200, 200, 200, 200};  // as últimas 4 leituras, a mais antiga primeiro
+  int andando = 0;                       // ciclos seguidos andando para frente
+  void esquecer() {
+    for (int i = 0; i < 4; i++) hist[i] = 200;
+    andando = 0;
+  }
+  // andando: mandou andar para frente neste ciclo. Devolve true quando está preso (e recomeça a contagem).
+  bool atualizar(bool andando_agora, float d) {
+    for (int i = 0; i < 3; i++) hist[i] = hist[i + 1];
+    hist[3] = d;
+    andando = andando_agora ? andando + 1 : 0;
+    if (andando >= 4 && d < 190 && hist[0] < 190) {
+      float mudou = hist[3] - hist[0];
+      if (mudou > -3.0f && mudou < 3.0f) {
+        esquecer();
+        return true;
+      }
+    }
+    return false;
+  }
+};

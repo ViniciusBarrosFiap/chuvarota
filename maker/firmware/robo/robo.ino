@@ -13,6 +13,7 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 
+#include "aprendizado.h"
 #include "caracteristicas.h"
 #include "direcao.h"
 #include "modelo_tinyml.h"
@@ -37,7 +38,12 @@ struct Leitura {
 volatile Leitura atual = {1, 200, 0};
 volatile bool urgente = false;
 FiltroDistancia filtro;  // sem eco logo depois de uma leitura perto = obstáculo colado, e não caminho livre
-bool autonomo = USAR_DABBLE ? MODO_INICIAL : 1;  // 0 = dirigido pelo Dabble, 1 = sozinho (triângulo alterna)
+enum Modo { MANUAL = 0, AUTONOMO = 1, TREINO = 2, IA = 3 };
+const char* NOMES_MODO[] = {"manual (Dabble)", "autônomo (regras + TinyML)", "treino (aprendendo por tentativa e erro)", "IA (usa o que aprendeu)"};
+int modo = USAR_DABBLE ? MODO_INICIAL : (MODO_INICIAL > 0 ? MODO_INICIAL : AUTONOMO);  // sem Dabble não há como dirigir: começa sozinho
+DetectorTravado detector;  // modo autônomo: mandou andar e a distância não mudou = preso raspando em uma parede
+Agente agente;             // aprendizado por reforço (modos treino e IA): a tabela fica na memória flash
+int rotulo_coleta = 0;     // MODO_COLETA: classe digitada no Monitor Serial (0 a 5)
 
 // janela das últimas leituras (a mais antiga primeiro)
 float janela_luz[JANELA], janela_dist[JANELA];
@@ -127,6 +133,112 @@ void manobra() {
   parar();
   preenchidas = 0;  // as leituras de antes da manobra não valem mais
   filtro.esquecer();
+  detector.esquecer();
+}
+
+// ---- modos treino e IA (aprendizado por reforço, ver aprendizado.h) --------------------------------------------------------------
+void salvar_agente() { memoria.putBytes("agente", &agente.m, sizeof(agente.m)); }
+
+void carregar_agente() {
+  agente.semear(esp_random());
+  if (memoria.getBytesLength("agente") == sizeof(agente.m)) {
+    memoria.getBytes("agente", &agente.m, sizeof(agente.m));
+    if (agente.m.versao != VERSAO_MEMORIA) agente.zerar();  // memória de uma versão antiga: recomeça
+  }
+  Serial.printf("aprendizado: %u passos de treino já feitos (exploração %.0f%%)\n", (unsigned)agente.m.passos, agente.epsilon() * 100);
+}
+
+// o que o robô faz em cada ação do agente
+void executar_acao(Acao a, bool escuro) {
+  int giro = VELOCIDADE_LENTA + 30;
+  switch (a) {
+    case FRENTE: motor(escuro ? VELOCIDADE_LENTA : VELOCIDADE_NORMAL, escuro ? VELOCIDADE_LENTA : VELOCIDADE_NORMAL); break;  // no escuro anda devagar
+    case FRENTE_LENTO: motor(VELOCIDADE_LENTA, VELOCIDADE_LENTA); break;
+    case GIRAR_ESQ: motor(-giro, giro); break;
+    case GIRAR_DIR: motor(giro, -giro); break;
+    case RE: motor(-VELOCIDADE_LENTA, -VELOCIDADE_LENTA); break;
+    default: parar();
+  }
+}
+
+void imprimir_bloco() {
+  const Bloco& b = agente.m.historico[(agente.m.blocos - 1) % N_BLOCOS];
+  Serial.printf("treino: bloco %u | passos %u | exploração %.0f%% | nota média %.2f | quase-batidas %u | freios %u\n", (unsigned)agente.m.blocos, (unsigned)agente.m.passos,
+                agente.epsilon() * 100, b.recompensa_media, b.quase_batidas, b.freios);
+}
+
+// um ciclo dos modos treino e IA: o agente escolhe a ação; o freio de segurança e a fuga valem mais que ele
+void passo_ia(float d, bool escuro, bool treinando) {
+  Decisao x = agente.decidir(d, treinando, treinando);
+  digitalWrite(LED, x.explorou);  // acende nos ciclos em que ele testa uma ação aleatória (explorando)
+  if (x.escapar) {  // preso: ré maior e giro para o lado
+    Serial.println("preso: fuga");
+    parar();
+    delay(100);
+    motor(-VELOCIDADE_LENTA, -VELOCIDADE_LENTA);
+    delay(500);
+    int v = VELOCIDADE_LENTA + 30;
+    motor(x.lado * v, -x.lado * v);
+    delay(700);
+    parar();
+    filtro.esquecer();
+    preenchidas = 0;
+  } else if (x.freio) {  // chegou perto demais: freio de segurança (um erro, que o agente aprende a evitar)
+    parar();
+    delay(60);
+    if (TREINO_APITAR_ERRO && treinando) {
+      digitalWrite(BUZZER, HIGH);
+      delay(40);
+      digitalWrite(BUZZER, LOW);
+    }
+    motor(-VELOCIDADE_LENTA, -VELOCIDADE_LENTA);
+    delay(250);
+    parar();
+    filtro.esquecer();
+  } else {
+    executar_acao(x.acao, escuro);
+  }
+  if (agente.fechou_bloco) {
+    agente.fechou_bloco = false;
+    imprimir_bloco();
+  }
+}
+
+// troca o modo: freia, esquece as leituras de antes e apita o número do modo (1 manual, 2 autônomo, 3 treino, 4 IA)
+void trocar_modo(int novo) {
+  if (modo == TREINO) salvar_agente();
+  modo = novo;
+  parar();
+  preenchidas = 0;
+  filtro.esquecer();
+  detector.esquecer();
+  agente.recomecar();
+  apitar(novo == MANUAL ? 1 : novo);
+  Serial.printf("modo: %s\n", NOMES_MODO[novo]);
+}
+
+// o que ele aprendeu: a melhor ação para cada situação (depois de uma ação de andar)
+void imprimir_politica() {
+  static const char* FAIXAS[] = {"< 20 cm (freio)", "20 a 30 cm", "30 a 50 cm", "50 a 90 cm", "90 a 190 cm", "sem eco"};
+  static const char* TENDENCIAS[] = {"aproximando", "estável", "afastando"};
+  Serial.printf("política aprendida (%u passos de treino). Melhor ação quando a distância está...\n", (unsigned)agente.m.passos);
+  for (int f = 0; f < N_FAIXAS; f++) {
+    for (int t = 0; t < N_TENDENCIAS; t++) {
+      int s = (f * N_TENDENCIAS + t) * N_GIROS;  // última ação = andou
+      Acao a = agente.melhor_acao(s);
+      Serial.printf("  %-16s %-12s -> %s\n", FAIXAS[f], TENDENCIAS[t], nome_acao(a));
+    }
+  }
+}
+
+// a curva de aprendizado, em CSV (copie do Monitor Serial): o treino melhora se as quase-batidas e os freios caem
+void imprimir_historico() {
+  uint32_t total = agente.m.blocos, primeiro = total > N_BLOCOS ? total - N_BLOCOS : 0;
+  Serial.printf("bloco,passos_de_treino,exploracao_pct,nota_media,quase_batidas,freios  (cada bloco = %d passos)\n", (int)PASSOS_POR_BLOCO);
+  for (uint32_t i = primeiro; i < total; i++) {
+    const Bloco& b = agente.m.historico[i % N_BLOCOS];
+    Serial.printf("%u,%u,,%.3f,%u,%u\n", (unsigned)(i + 1), (unsigned)((i + 1) * PASSOS_POR_BLOCO), b.recompensa_media, b.quase_batidas, b.freios);
+  }
 }
 
 void enviar(Leitura l) {
@@ -196,19 +308,15 @@ void dirigir_manual() {
 }
 
 void botoes() {
-  static bool triangulo_antes = false;
-  bool triangulo = GamePad.isTrianglePressed();
-  if (triangulo && !triangulo_antes) {  // triângulo: alterna entre dirigir e andar sozinho
-    autonomo = !autonomo;
-    parar();
-    preenchidas = 0;
-    apitar(autonomo ? 2 : 1);
-  }
+  static bool triangulo_antes = false, circulo_antes = false, start_antes = false;
+  bool triangulo = GamePad.isTrianglePressed(), circulo = GamePad.isCirclePressed(), start = GamePad.isStartPressed();
+  if (triangulo && !triangulo_antes) trocar_modo(modo == AUTONOMO ? MANUAL : AUTONOMO);  // triângulo: anda sozinho (regras + TinyML)
+  if (circulo && !circulo_antes) trocar_modo(modo == TREINO ? MANUAL : TREINO);          // círculo: modo treino (aprende)
+  if (start && !start_antes) trocar_modo(modo == IA ? MANUAL : IA);                      // start: modo IA (usa o que aprendeu)
   triangulo_antes = triangulo;
-  if (GamePad.isCrossPressed() && autonomo) {  // X: freia e volta para o controle manual
-    autonomo = false;
-    parar();
-  }
+  circulo_antes = circulo;
+  start_antes = start;
+  if (GamePad.isCrossPressed() && modo != MANUAL) trocar_modo(MANUAL);  // X: freia e volta para o controle manual
   digitalWrite(BUZZER, GamePad.isSquarePressed());  // quadrado: buzina
 }
 #endif
@@ -224,7 +332,22 @@ void comandos_serial() {
       Serial.println("calibração do LDR apagada");
     } else if (c == 'i') {
       Serial.printf("LDR: mais escuro visto %.0f, mais claro visto %.0f\n", ldr_min, ldr_max);
+    } else if (c == 'a') {  // liga e desliga o modo treino (sem precisar do Dabble)
+      trocar_modo(modo == TREINO ? MANUAL : TREINO);
+    } else if (c == 'u') {  // liga e desliga o modo IA
+      trocar_modo(modo == IA ? MANUAL : IA);
+    } else if (c == 'q') {
+      imprimir_politica();
+    } else if (c == 'e') {
+      imprimir_historico();
+    } else if (c == 'z') {  // apaga o que ele aprendeu (use ao levar o carrinho para um ambiente novo)
+      agente.zerar();
+      salvar_agente();
+      Serial.println("aprendizado apagado");
     }
+#if MODO_COLETA
+    if (c >= '0' && c <= '5') rotulo_coleta = c - '0';
+#endif
   }
 }
 
@@ -241,6 +364,7 @@ void setup() {
   memoria.begin("robo", false);
   ldr_min = memoria.getFloat("ldr_min", LDR_ESCURO);
   ldr_max = memoria.getFloat("ldr_max", LDR_CLARO);
+  carregar_agente();
 
 #if MODO_COLETA
   Serial.println("luz,distancia_cm,classe  (digite 0 a 5 para escolher a classe)");
@@ -266,7 +390,7 @@ void loop() {
 #if !MODO_COLETA && USAR_DABBLE
   Dabble.processInput();
   botoes();
-  if (!autonomo) dirigir_manual();
+  if (modo == MANUAL) dirigir_manual();
 #endif
   if (millis() < proxima) return;
   proxima = millis() + PERIODO_MS;
@@ -275,16 +399,12 @@ void loop() {
   float l = luz();
   if (millis() - ultimo_salvar > 60000) {
     salvar_calibracao();
+    if (modo == TREINO) salvar_agente();
     ultimo_salvar = millis();
   }
 
 #if MODO_COLETA
-  static int rotulo = 0;
-  while (Serial.available()) {
-    int c = Serial.read() - '0';
-    if (c >= 0 && c <= 5) rotulo = c;
-  }
-  Serial.printf("%.3f,%.1f,%d\n", l, d, rotulo);
+  Serial.printf("%.3f,%.1f,%d\n", l, d, rotulo_coleta);
   return;
 #endif
 
@@ -319,18 +439,24 @@ void loop() {
   atual.classe = c;
   digitalWrite(LED, c == 1 || c == 3 || c == 4);
 
-  if (!autonomo) {  // dirigindo pelo Dabble: o robô só observa e avisa
+  if (modo != AUTONOMO) {  // manual, treino ou IA: o robô observa e avisa (e, no treino e na IA, o agente dirige)
     if (c == 3 && millis() - ultimo_alerta > 10000) {
       ultimo_alerta = millis();
-      apitar(1);
+      if (modo == MANUAL) apitar(1);  // no treino e na IA não apita: o robô está andando e não pode parar para isso
       urgente = true;
     }
     if (c == 4 && millis() - ultima_luz_piscando > 30000) {
       ultima_luz_piscando = millis();
       urgente = true;
     }
+    if (modo == TREINO || modo == IA) passo_ia(d, c == 1 || c == 3, modo == TREINO);
     return;
   }
+
+  // modo autônomo: mandou andar e a distância não mudou por 3 ciclos = preso raspando em uma parede (o sensor só enxerga reto)
+  static bool andou_antes = false;
+  if (detector.atualizar(andou_antes, d) && (c == 0 || c == 1 || c == 4)) c = 2;
+  andou_antes = (c == 0 || c == 1 || c == 4);
 
   switch (c) {
     case 0: motor(VELOCIDADE_NORMAL, VELOCIDADE_NORMAL); break;
