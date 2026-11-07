@@ -60,11 +60,15 @@ Grave o sketch de teste: `./maker/firmware/gravar.sh teste_pecas` e digite os co
 | 9 | Cobrir o LDR e pôr a mão na frente | para, apita 3 vezes e o alerta aparece no MVP |
 | 10 | Piscar a lanterna do celular sobre o LDR | classe `luz_piscando` aparece no MVP (a cada 30 s no máximo) |
 | 11 | Mão vindo rápido na direção do robô | freia e recua antes de chegar perto |
+| 12 | **Modo treino** (círculo no Dabble ou `a` no monitor), **no chão**, em um espaço fechado e sem degraus. Deixe uns 10 a 20 minutos | anda, testa ações aleatórias (LED aceso), dá um bip a cada freio de segurança e, no Monitor Serial, aparece `treino: bloco ...` a cada 300 passos. Os bips e as "quase-batidas" devem ficar mais raros com o tempo |
+| 13 | `q` no Monitor Serial depois do treino | mostra a melhor ação para cada distância: longe anda, perto vira |
+| 14 | **Modo IA** (Start ou `u`) no mesmo espaço | anda desviando sem explorar. Para repetir em outro ambiente, apague com `z` e treine de novo |
 
 Comandos no Monitor Serial com o robô rodando: `i` mostra a calibração do LDR; `r` apaga a calibração (use se o robô aprendeu um valor errado, por exemplo depois de um flash de câmera).
 
 ## 5. Ajustes sem mexer no código (`config.h`)
 - Gira pouco ou demais na manobra: `TEMPO_GIRO_MS` (giro mínimo) e `TEMPO_GIRO_MAX_MS` (limite quando o caminho continua fechado). Recua pouco: `TEMPO_RE_MS`.
+- Com as **rodas no ar** (bancada), os modos autônomo, treino e IA acham que o carrinho ficou preso (a distância não muda enquanto ele "anda") e ficam fazendo manobra de fuga. É normal: teste esses modos no chão.
 - Ainda bate na parede: aumente `DIST_MINIMA_CM` (distância em que ele para) ou diminua `VELOCIDADE_NORMAL`. Vira cedo demais: diminua `DIST_MINIMA_CM`.
 - Muito rápido ou lento: `VELOCIDADE_NORMAL` e `VELOCIDADE_LENTA`.
 - Os motores zumbem e não andam: aumente `PWM_MINIMO`.
