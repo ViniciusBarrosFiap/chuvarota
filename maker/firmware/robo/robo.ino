@@ -14,13 +14,14 @@
 #include <WiFiClientSecure.h>
 
 #include "caracteristicas.h"
+#include "direcao.h"
 #include "modelo_tinyml.h"
 
 // motores (ponte H L298N)
 const int ENA = 25, IN1 = 26, IN2 = 27;
 const int ENB = 13, IN3 = 32, IN4 = 33;
 // sensores e saídas
-const int TRIG = 5, ECHO = 18;  // o ECHO passa por um divisor de tensão (5 V -> 3,3 V)
+const int TRIG = 5, ECHO = 18;  // sensor a 5 V: o ECHO passa por um divisor de tensão (5 V -> 3,3 V); sensor a 3,3 V: ligado direto
 const int LDR = 34;
 const int BUZZER = 23, LED = 2;
 
@@ -167,16 +168,14 @@ void tarefa_rede(void*) {
 }
 
 #if USAR_DABBLE
-// joystick do Dabble: valores de -7 a 7; as setas valem 1
+// seta para cima = frente, baixo = trás, esquerda/direita = vira para o lado (modo digital); no modo joystick, ângulo e raio (0 a 7)
 void dirigir_manual() {
-  float jx = GamePad.getXaxisData(), jy = GamePad.getYaxisData() * (INVERTE_JOYSTICK_Y ? -1 : 1);
-  float giro = abs(jx) < 1 ? 0 : jx / 7.0f, frente = abs(jy) < 1 ? 0 : jy / 7.0f;
-  if (GamePad.isUpPressed()) frente = 1;
-  if (GamePad.isDownPressed()) frente = -1;
-  if (GamePad.isLeftPressed()) giro = -1;
-  if (GamePad.isRightPressed()) giro = 1;
-  if (frente > 0 && atual.dist < DIST_MINIMA_CM) frente = 0;  // proteção: não deixa bater de frente
-  motor((int)constrain((frente + giro) * VELOCIDADE_NORMAL, -255.0f, 255.0f), (int)constrain((frente - giro) * VELOCIDADE_NORMAL, -255.0f, 255.0f));
+  Comando c = ler_comando(GamePad.isUpPressed(), GamePad.isDownPressed(), GamePad.isLeftPressed(), GamePad.isRightPressed(),
+                          GamePad.getAngle(), GamePad.getRadius(), INVERTE_JOYSTICK_Y);
+  if (c.frente > 0 && atual.dist < DIST_MINIMA_CM) c.frente = 0;  // proteção: não deixa bater de frente
+  int esq, dir;
+  misturar_rodas(c.frente, c.giro, VELOCIDADE_NORMAL, &esq, &dir);
+  motor(esq, dir);
 }
 
 void botoes() {

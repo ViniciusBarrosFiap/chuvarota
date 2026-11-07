@@ -92,6 +92,7 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 
 ## Testes
 - `python maker/tinyml/testar_c.py`: o C++ decide igual ao Python.
+- `python maker/tinyml/testar_direcao.py`: as setas e o joystick do Dabble viram o movimento certo das rodas (cima = frente, baixo = trás, esquerda e direita = virar para o lado).
 - `arduino-cli compile --fqbn esp32:esp32:esp32 maker/firmware/robo` (com um `config.h`): compila.
 - `pytest mvp`: o endpoint `/robo` (sem token, token errado, leitura inválida e válida).
 - `ROBO_TOKEN=... python maker/simulador/simular_robo.py <url> 8`: manda leituras de teste ao MVP.
