@@ -113,7 +113,7 @@ void manobra() {
 
 void enviar(Leitura l) {
   if (WiFi.status() != WL_CONNECTED) return;
-  if (ESP.getMaxAllocHeap() < 45000) {  // o Bluetooth e o HTTPS dividem a memória; sem folga o TLS falha
+  if (ESP.getMaxAllocHeap() < 25000) {  // sem validar o certificado o TLS precisa de bem menos memória
     Serial.printf("envio adiado: pouca memória livre (%u bytes)\n", ESP.getMaxAllocHeap());
     return;
   }
