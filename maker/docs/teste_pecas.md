@@ -5,9 +5,10 @@ O firmware, o modelo e a conexão com o MVP já estão prontos. O que falta é l
 ## 1. Arduino IDE: abrir e gravar o código
 1. Instale o Arduino IDE 2. Em **Arduino IDE > Settings > URLs adicionais para o Gerenciador de Placas**, cole `https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
 2. **Ferramentas > Placa > Gerenciador de Placas**, busque `esp32` e instale **"esp32 by Espressif Systems" versão 3.x** (a 2.x não serve: o código usa `ledcAttach`).
+2b. **Ferramentas > Gerenciar Bibliotecas**, busque **DabbleESP32** (de STEMpedia) e instale: é ela que faz o carrinho obedecer ao app Dabble.
 3. **Arquivo > Abrir** e escolha o arquivo `maker/firmware/robo/robo.ino` (o arquivo, não a pasta). O IDE abre abas com `robo.ino`, `caracteristicas.h`, `cert_raiz.h`, `config.example.h` e `modelo_tinyml.h`.
 4. Crie o `config.h`: copie `config.example.h` para `config.h` **na mesma pasta** e preencha o Wi-Fi (2,4 GHz) e o token (ou rode `./maker/firmware/configurar.sh`, que faz isso). Sem o `config.h` o IDE mostra o erro "Falta o config.h".
-5. **Ferramentas > Placa > esp32 > ESP32 Dev Module**, e em **Porta** escolha `/dev/cu.usbserial-...` (se não aparecer, instale o driver CP210x ou CH340 e use um cabo USB de dados).
+5. **Ferramentas > Placa > esp32 > ESP32 Dev Module**, **Ferramentas > Partition Scheme > Huge APP (3MB No OTA/1MB SPIFFS)** (obrigatório: sem isso o IDE diz "Sketch too big"), e em **Porta** escolha `/dev/cu.usbserial-...` (se não aparecer, instale o driver CP210x ou CH340 e use um cabo USB de dados).
 6. Clique em **Upload** (seta para a direita). Se aparecer `Connecting........`, segure o botão **BOOT** do ESP32 até começar a gravar.
 7. **Ferramentas > Monitor Serial**, velocidade **115200**.
 
@@ -52,7 +53,8 @@ Grave o sketch de teste: `./maker/firmware/gravar.sh teste_pecas` e digite os co
 | # | Teste | Esperado |
 |---|---|---|
 | 6 | Rede, com o robô no colo | aparece `envio: {...} -> 201` e a leitura aparece na tela do MVP (https://chuvarota-85ixn.azurewebsites.net) |
-| 7 | Autonomia, no chão, com um obstáculo à frente | desvia sozinho |
+| 7 | Dabble: conectar em `ChuvaRota` ([dabble.md](dabble.md)) e dirigir com as setas | o carrinho anda e vira; a menos de 8 cm de um obstáculo ele não avança |
+| 7b | Apertar o **triângulo** (apita 2 vezes) com um obstáculo à frente | modo autônomo: desvia sozinho. **X** volta ao manual |
 | 8 | Cobrir o LDR | anda devagar (pouca luz) |
 | 9 | Cobrir o LDR e pôr a mão na frente | para, apita 3 vezes e o alerta aparece no MVP |
 | 10 | Piscar a lanterna do celular sobre o LDR | classe `luz_piscando` aparece no MVP (a cada 30 s no máximo) |

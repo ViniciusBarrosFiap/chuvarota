@@ -2,18 +2,20 @@
 
 Integrante: **Vinicius Barros, RM 97824**
 
-Carro robô com ESP32 que anda sozinho, desvia de obstáculos, mede a luz do ambiente com um **LDR (sensor novo)** e usa um **modelo TinyML** para entender o que está acontecendo. Quando acha uma situação de risco (ponto escuro com obstáculo, lâmpada piscando, algo vindo rápido), o robô reage e manda um alerta ao MVP do ChuvaRota, que mostra as leituras em tempo real.
+Carro robô com ESP32 **controlado pelo app Dabble** (Bluetooth), que também pode andar sozinho, desvia de obstáculos, mede a luz do ambiente com um **LDR (sensor novo)** e usa um **modelo TinyML** para entender o que está acontecendo. Quando acha uma situação de risco (ponto escuro com obstáculo, lâmpada piscando, algo vindo rápido), o robô reage e manda um alerta ao MVP do ChuvaRota, que mostra as leituras em tempo real.
 
 > **Estado atual:** firmware, modelo TinyML e integração com o MVP estão prontos e testados no computador (o firmware compila, o C++ decide igual ao Python e o endpoint está no ar no Azure). **O carrinho ainda não foi montado**, então nada foi testado no hardware: a seção "Resultados com o robô" abaixo será preenchida depois dos testes de bancada.
 
 ## Montar e gravar (resumo)
 1. Ligar as peças fio a fio com o [docs/montagem.md](docs/montagem.md) (esquema geral em [docs/ligacao.png](docs/ligacao.png)).
-2. Pelo **Arduino IDE** (passo a passo em [docs/teste_pecas.md](docs/teste_pecas.md)): abrir `maker/firmware/robo/robo.ino`, criar o `config.h` e clicar em Upload. Ou, pelo terminal, com o ESP32 por USB (cabo de dados):
+2. Pelo **Arduino IDE** (passo a passo em [docs/teste_pecas.md](docs/teste_pecas.md)): instalar a biblioteca **DabbleESP32**, escolher a partição **Huge APP**, abrir `maker/firmware/robo/robo.ino`, criar o `config.h` e clicar em Upload. Ou, pelo terminal, com o ESP32 por USB (cabo de dados):
 ```
 ./maker/firmware/configurar.sh     # pergunta o Wi-Fi (2,4 GHz) e cria o config.h com o token do MVP
 ./maker/firmware/gravar.sh         # compila, grava e abre o Monitor Serial
 ```
 3. Antes disso, se quiser testar cada peça sozinha: `./maker/firmware/gravar.sh teste_pecas`.
+
+Depois, abra o app **Dabble** no celular e conecte em **ChuvaRota** ([docs/dabble.md](docs/dabble.md)).
 
 Não precisa calibrar o LDR (o robô aprende o mais escuro e o mais claro que vê) nem mexer no código: motor ao contrário, velocidade e tempo de giro se ajustam no `config.h`.
 
@@ -30,6 +32,7 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 | **LDR + resistor de 10 kΩ** | **sensor novo: luminosidade do ambiente** |
 | Buzzer ativo | alerta sonoro |
 | Bateria de 6 a 9 V | alimentação |
+| Celular com o app **Dabble** | controle por Bluetooth (joystick, setas e botões) |
 
 ![ligação](docs/ligacao.png)
 
@@ -50,7 +53,7 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 4. Uma regra de segurança fica **acima** do modelo: a menos de 8 cm o robô para, mesmo que o modelo erre. Situações de risco valem na hora; as demais só trocam depois de 2 decisões iguais seguidas.
 5. Outra tarefa do ESP32 envia a situação ao MVP a cada 5 s (e na hora no caso de alerta), por HTTPS com a hora acertada por NTP, sem travar o robô.
 
-Autonomia: depois de ligado, o robô não recebe nenhum comando manual.
+**Controle pelo Dabble e autonomia:** por padrão o carrinho é dirigido pelo app Dabble (Bluetooth), e o **triângulo** alterna para o modo **autônomo**, em que ele decide sozinho com os sensores e o TinyML. Mesmo dirigido à mão, o robô não bate de frente (parada a 8 cm), classifica o ambiente e manda os alertas ao MVP. Botões e ajustes em [docs/dabble.md](docs/dabble.md).
 
 ## TinyML
 - Rede neural pequena: 5 entradas, camadas de 16 e 8 neurônios (ReLU) e 6 saídas, **286 parâmetros (cerca de 1 KB)**. O treino é em Python (`tinyml/treinar.py`, scikit-learn) e o resultado vira um arquivo C++ (`firmware/robo/modelo_tinyml.h`) que roda no ESP32 sem biblioteca nenhuma.
@@ -85,7 +88,7 @@ Autonomia: depois de ligado, o robô não recebe nenhum comando manual.
 - `firmware/configurar.sh` e `firmware/gravar.sh`
 - `tinyml/` simulador dos sensores, características, treino, testes e coleta de dados reais
 - `simulador/` finge ser o robô para testar o endpoint do MVP
-- `docs/` montagem fio a fio, esquema de ligação e testes de bancada
+- `docs/` montagem fio a fio, controle pelo Dabble, esquema de ligação e testes de bancada
 
 ## Testes
 - `python maker/tinyml/testar_c.py`: o C++ decide igual ao Python.

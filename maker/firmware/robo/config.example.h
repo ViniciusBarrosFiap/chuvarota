@@ -6,6 +6,13 @@
 #define URL_MVP "https://chuvarota-85ixn.azurewebsites.net/robo"
 #define TOKEN_ROBO "troque-pelo-token"
 
+// nome que aparece no Bluetooth: no app Dabble, toque em Connect e escolha este nome
+#define NOME_BLUETOOTH "ChuvaRota"
+// 0 = o robô começa dirigido pelo Dabble (triângulo alterna para o modo autônomo); 1 = começa sozinho
+#define MODO_INICIAL 0
+// se "para frente" no joystick do Dabble fizer o robô ir para trás, troque 0 por 1
+#define INVERTE_JOYSTICK_Y 0
+
 // LDR: valores de partida (0 a 4095). O robô se autocalibra: guarda na memória o mais escuro e o mais claro que já viu
 #define LDR_ESCURO 300
 #define LDR_CLARO 3200

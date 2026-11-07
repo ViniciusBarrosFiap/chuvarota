@@ -1,0 +1,7 @@
+{
+  "cpu": {
+    "name": "ESP32 Dev Module",
+    "fqbn": "esp32:esp32:esp32:PartitionScheme=huge_app",
+    "type": "serial"
+  }
+}

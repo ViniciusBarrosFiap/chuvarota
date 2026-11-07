@@ -1,6 +1,9 @@
-// Carro robô ChuvaRota: anda sozinho, desvia de obstáculos, mede a luz com o LDR e classifica a situação com um modelo TinyML.
-// Placa: ESP32 DevKit (pacote "esp32" 3.x do Arduino).
+// Carro robô ChuvaRota: dirigido pelo app Dabble (Bluetooth) ou sozinho; desvia de obstáculos, mede a luz com o LDR
+// e classifica a situação com um modelo TinyML. Placa: ESP32 DevKit (pacote "esp32" 3.x; partição "Huge APP").
 #include <Arduino.h>
+#define CUSTOM_SETTINGS
+#define INCLUDE_GAMEPAD_MODULE
+#include <DabbleESP32.h>  // biblioteca "DabbleESP32" (app Dabble)
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <WiFi.h>
@@ -32,6 +35,7 @@ struct Leitura {
 };
 volatile Leitura atual = {1, 200, 0};
 volatile bool urgente = false;
+bool autonomo = MODO_INICIAL;  // 0 = dirigido pelo Dabble, 1 = sozinho (triângulo alterna)
 
 // janela das últimas leituras (a mais antiga primeiro)
 float janela_luz[JANELA], janela_dist[JANELA];
@@ -110,6 +114,10 @@ void manobra() {
 
 void enviar(Leitura l) {
   if (WiFi.status() != WL_CONNECTED) return;
+  if (ESP.getMaxAllocHeap() < 45000) {  // o Bluetooth e o HTTPS dividem a memória; sem folga o TLS falha
+    Serial.printf("envio adiado: pouca memória livre (%u bytes)\n", ESP.getMaxAllocHeap());
+    return;
+  }
   WiFiClientSecure cliente;
   cliente.setCACert(CERT_RAIZ);
   HTTPClient http;
@@ -152,6 +160,35 @@ void tarefa_rede(void*) {
   }
 }
 
+// joystick do Dabble: valores de -7 a 7; as setas valem 1
+void dirigir_manual() {
+  float jx = GamePad.getXaxisData(), jy = GamePad.getYaxisData() * (INVERTE_JOYSTICK_Y ? -1 : 1);
+  float giro = abs(jx) < 1 ? 0 : jx / 7.0f, frente = abs(jy) < 1 ? 0 : jy / 7.0f;
+  if (GamePad.isUpPressed()) frente = 1;
+  if (GamePad.isDownPressed()) frente = -1;
+  if (GamePad.isLeftPressed()) giro = -1;
+  if (GamePad.isRightPressed()) giro = 1;
+  if (frente > 0 && atual.dist < DIST_MINIMA_CM) frente = 0;  // proteção: não deixa bater de frente
+  motor((int)constrain((frente + giro) * VELOCIDADE_NORMAL, -255.0f, 255.0f), (int)constrain((frente - giro) * VELOCIDADE_NORMAL, -255.0f, 255.0f));
+}
+
+void botoes() {
+  static bool triangulo_antes = false;
+  bool triangulo = GamePad.isTrianglePressed();
+  if (triangulo && !triangulo_antes) {  // triângulo: alterna entre dirigir e andar sozinho
+    autonomo = !autonomo;
+    parar();
+    preenchidas = 0;
+    apitar(autonomo ? 2 : 1);
+  }
+  triangulo_antes = triangulo;
+  if (GamePad.isCrossPressed() && autonomo) {  // X: freia e volta para o controle manual
+    autonomo = false;
+    parar();
+  }
+  digitalWrite(BUZZER, GamePad.isSquarePressed());  // quadrado: buzina
+}
+
 void comandos_serial() {
   while (Serial.available()) {
     char c = Serial.read();
@@ -184,6 +221,7 @@ void setup() {
 #if MODO_COLETA
   Serial.println("luz,distancia_cm,classe  (digite 0 a 5 para escolher a classe)");
 #else
+  Dabble.begin(NOME_BLUETOOTH);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_SENHA);
   xTaskCreatePinnedToCore(tarefa_rede, "rede", 12288, NULL, 1, NULL, 0);
@@ -193,8 +231,14 @@ void setup() {
 
 void loop() {
   static unsigned long proxima = 0, ultimo_salvar = 0, ultima_luz_piscando = 0;
+  static unsigned long ultimo_alerta = 0;
   static int candidata = 0, repeticoes = 0, em_vigor = 0;
   comandos_serial();
+#if !MODO_COLETA
+  Dabble.processInput();
+  botoes();
+  if (!autonomo) dirigir_manual();
+#endif
   if (millis() < proxima) return;
   proxima = millis() + PERIODO_MS;
 
@@ -245,6 +289,19 @@ void loop() {
   atual.dist = d;
   atual.classe = c;
   digitalWrite(LED, c == 1 || c == 3 || c == 4);
+
+  if (!autonomo) {  // dirigindo pelo Dabble: o robô só observa e avisa
+    if (c == 3 && millis() - ultimo_alerta > 10000) {
+      ultimo_alerta = millis();
+      apitar(1);
+      urgente = true;
+    }
+    if (c == 4 && millis() - ultima_luz_piscando > 30000) {
+      ultima_luz_piscando = millis();
+      urgente = true;
+    }
+    return;
+  }
 
   switch (c) {
     case 0: motor(VELOCIDADE_NORMAL, VELOCIDADE_NORMAL); break;
