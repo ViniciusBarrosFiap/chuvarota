@@ -6,8 +6,8 @@ O firmware, o modelo e a conexão com o MVP já estão prontos. O que falta é l
 1. Instale o Arduino IDE 2. Em **Arduino IDE > Settings > URLs adicionais para o Gerenciador de Placas**, cole `https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
 2. **Ferramentas > Placa > Gerenciador de Placas**, busque `esp32` e instale **"esp32 by Espressif Systems" versão 3.x** (a 2.x não serve: o código usa `ledcAttach`).
 2b. **Ferramentas > Gerenciar Bibliotecas**, busque **DabbleESP32** (de STEMpedia) e instale: é ela que faz o carrinho obedecer ao app Dabble.
-3. **Arquivo > Abrir** e escolha o arquivo `maker/firmware/robo/robo.ino` (o arquivo, não a pasta). O IDE abre abas com `robo.ino`, `caracteristicas.h`, `cert_raiz.h`, `config.example.h` e `modelo_tinyml.h`.
-4. Crie o `config.h`: copie `config.example.h` para `config.h` **na mesma pasta** e preencha o Wi-Fi (2,4 GHz) e o token (ou rode `./maker/firmware/configurar.sh`, que faz isso). Sem o `config.h` o IDE mostra o erro "Falta o config.h".
+3. **Arquivo > Abrir** e escolha o arquivo `maker/firmware/robo/robo.ino` (o arquivo, não a pasta). O IDE abre abas com `robo.ino`, `caracteristicas.h`, `cert_raiz.h`, `config.h`, `modelo_tinyml.h` e `wifi_local.example.h`.
+4. **Wi-Fi:** copie `wifi_local.example.h` para `wifi_local.h` **na mesma pasta** e preencha o nome e a senha do seu Wi-Fi (2,4 GHz), ou rode `./maker/firmware/configurar.sh`. O token do MVP já vem no `config.h`. O `wifi_local.h` não vai para o Git.
 5. **Ferramentas > Placa > esp32 > ESP32 Dev Module**, **Ferramentas > Partition Scheme > Huge APP (3MB No OTA/1MB SPIFFS)** (obrigatório: sem isso o IDE diz "Sketch too big"), e em **Porta** escolha `/dev/cu.usbserial-...` (se não aparecer, instale o driver CP210x ou CH340 e use um cabo USB de dados).
 6. Clique em **Upload** (seta para a direita). Se aparecer `Connecting........`, segure o botão **BOOT** do ESP32 até começar a gravar.
 7. **Ferramentas > Monitor Serial**, velocidade **115200**.
@@ -17,7 +17,7 @@ Para testar cada peça antes, abra `maker/firmware/teste_pecas/teste_pecas.ino` 
 ## 1b. Preparação pelo terminal (alternativa, no Mac)
 - `arduino-cli` e o pacote `esp32` 3.x já estão instalados neste Mac. Em outro computador: `arduino-cli core install esp32:esp32 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
 - Driver da placa: se o Mac não enxergar o ESP32 em `/dev/cu.*`, instale o driver CP210x ou CH340 (veja o chip que está escrito na placa). Use um cabo USB **de dados**.
-- `./maker/firmware/configurar.sh` pergunta o Wi-Fi (2,4 GHz) e cria o `config.h` com o token do MVP.
+- `./maker/firmware/configurar.sh` pergunta o Wi-Fi (2,4 GHz) e cria o `wifi_local.h`.
 
 ## 2. Ligação
 **Passo a passo completo, fio a fio, em [montagem.md](montagem.md).** Esquema geral em [ligacao.png](ligacao.png). Resumo dos pinos:
@@ -88,5 +88,5 @@ O modelo já vem treinado em dados simulados. Com dados do seu robô ele se ajus
 
 ## Se der problema
 - Reinicia ao ligar os motores: a bateria não segura a corrente; use pilhas novas e confira o GND comum.
-- `envio -> -1`: sem Wi-Fi ou senha errada (a rede precisa ser de 2,4 GHz). `envio -> 401`: token diferente do que está no Azure; rode `./configurar.sh` de novo.
+- `envio -> -1`: sem Wi-Fi ou senha errada (a rede precisa ser de 2,4 GHz). `envio -> 401`: token diferente do que está no Azure (confira o `TOKEN_ROBO` do `config.h`).
 - A distância fica sempre em 200: o ECHO não chega ao ESP32.

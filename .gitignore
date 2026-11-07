@@ -1,8 +1,6 @@
 __pycache__/
 .venv/
 .venv-af/
-*.tfstate*
-*.tfvars
 .env
 dados/chegada/
 airflow_home/
@@ -14,4 +12,4 @@ visao/runs/
 visao/data.yaml
 *.pt
 !visao/modelo/best.pt
-maker/firmware/robo/config.h
+maker/firmware/robo/wifi_local.h

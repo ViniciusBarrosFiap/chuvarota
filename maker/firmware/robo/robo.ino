@@ -11,9 +11,6 @@
 
 #include "caracteristicas.h"
 #include "cert_raiz.h"
-#if !__has_include("config.h")
-#error "Falta o config.h: copie config.example.h para config.h (na mesma pasta) e preencha o Wi-Fi e o token, ou rode maker/firmware/configurar.sh"
-#endif
 #include "config.h"
 #include "modelo_tinyml.h"
 

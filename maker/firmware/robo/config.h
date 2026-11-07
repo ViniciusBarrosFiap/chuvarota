@@ -1,10 +1,13 @@
-// copie para config.h (que não vai para o Git) ou rode maker/firmware/configurar.sh, que faz isso por você
+// Configuração do robô. Este arquivo vai para o GitHub, então NÃO coloque aqui a senha do seu Wi-Fi:
+// copie wifi_local.example.h para wifi_local.h (o Git ignora esse arquivo) e preencha o Wi-Fi lá.
 #pragma once
 
-#define WIFI_SSID "nome-da-rede"
-#define WIFI_SENHA "senha-da-rede"
+#define WIFI_SSID "nome-da-rede"   // troque em wifi_local.h
+#define WIFI_SENHA "senha-da-rede"  // troque em wifi_local.h
 #define URL_MVP "https://chuvarota-85ixn.azurewebsites.net/robo"
-#define TOKEN_ROBO "troque-pelo-token"
+// Token de DEMONSTRAÇÃO, público de propósito: só deixa o robô enviar leituras de teste ao MVP de demonstração.
+// Para usar o seu próprio MVP, defina ROBO_TOKEN lá (infra/variables.tf) e troque o valor aqui.
+#define TOKEN_ROBO "6wsbYPEzUPxyJsi3S_4fvnyJDnlBjxCo"  // gitleaks:allow
 
 // nome que aparece no Bluetooth: no app Dabble, toque em Connect e escolha este nome
 #define NOME_BLUETOOTH "ChuvaRota"
@@ -30,3 +33,10 @@
 
 // 1 = robô parado só imprimindo "luz,distancia_cm,classe" a cada 100 ms para coletar dados reais (ver docs/teste_pecas.md)
 #define MODO_COLETA 0
+
+// o Wi-Fi de verdade fica em wifi_local.h, que não vai para o Git
+#if __has_include("wifi_local.h")
+#undef WIFI_SSID
+#undef WIFI_SENHA
+#include "wifi_local.h"
+#endif
