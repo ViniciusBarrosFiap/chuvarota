@@ -7,7 +7,7 @@ Carro robô com ESP32 que anda sozinho, desvia de obstáculos, mede a luz do amb
 > **Estado atual:** firmware, modelo TinyML e integração com o MVP estão prontos e testados no computador (o firmware compila, o C++ decide igual ao Python e o endpoint está no ar no Azure). **O carrinho ainda não foi montado**, então nada foi testado no hardware: a seção "Resultados com o robô" abaixo será preenchida depois dos testes de bancada.
 
 ## Montar e gravar (resumo)
-1. Ligar as peças como em [docs/ligacao.png](docs/ligacao.png) (pinos e divisor do ECHO em [docs/teste_pecas.md](docs/teste_pecas.md)).
+1. Ligar as peças fio a fio com o [docs/montagem.md](docs/montagem.md) (esquema geral em [docs/ligacao.png](docs/ligacao.png)).
 2. Pelo **Arduino IDE** (passo a passo em [docs/teste_pecas.md](docs/teste_pecas.md)): abrir `maker/firmware/robo/robo.ino`, criar o `config.h` e clicar em Upload. Ou, pelo terminal, com o ESP32 por USB (cabo de dados):
 ```
 ./maker/firmware/configurar.sh     # pergunta o Wi-Fi (2,4 GHz) e cria o config.h com o token do MVP
@@ -85,7 +85,7 @@ Autonomia: depois de ligado, o robô não recebe nenhum comando manual.
 - `firmware/configurar.sh` e `firmware/gravar.sh`
 - `tinyml/` simulador dos sensores, características, treino, testes e coleta de dados reais
 - `simulador/` finge ser o robô para testar o endpoint do MVP
-- `docs/` ligação e testes de bancada
+- `docs/` montagem fio a fio, esquema de ligação e testes de bancada
 
 ## Testes
 - `python maker/tinyml/testar_c.py`: o C++ decide igual ao Python.

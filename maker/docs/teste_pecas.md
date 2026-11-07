@@ -19,7 +19,7 @@ Para testar cada peça antes, abra `maker/firmware/teste_pecas/teste_pecas.ino` 
 - `./maker/firmware/configurar.sh` pergunta o Wi-Fi (2,4 GHz) e cria o `config.h` com o token do MVP.
 
 ## 2. Ligação
-Siga o esquema em [ligacao.png](ligacao.png). Resumo dos pinos:
+**Passo a passo completo, fio a fio, em [montagem.md](montagem.md).** Esquema geral em [ligacao.png](ligacao.png). Resumo dos pinos:
 
 | Peça | Liga em |
 |---|---|
