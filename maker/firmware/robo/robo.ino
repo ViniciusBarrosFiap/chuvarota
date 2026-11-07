@@ -16,6 +16,7 @@
 #include "caracteristicas.h"
 #include "direcao.h"
 #include "modelo_tinyml.h"
+#include "seguranca.h"
 
 // motores (ponte H L298N)
 const int ENA = 25, IN1 = 26, IN2 = 27;
@@ -35,6 +36,7 @@ struct Leitura {
 };
 volatile Leitura atual = {1, 200, 0};
 volatile bool urgente = false;
+FiltroDistancia filtro;  // sem eco logo depois de uma leitura perto = obstáculo colado, e não caminho livre
 bool autonomo = USAR_DABBLE ? MODO_INICIAL : 1;  // 0 = dirigido pelo Dabble, 1 = sozinho (triângulo alterna)
 
 // janela das últimas leituras (a mais antiga primeiro)
@@ -101,15 +103,30 @@ void salvar_calibracao() {
   calibracao_mudou = false;
 }
 
+// Para, recua um pouco e vira para o lado, alternando esquerda e direita a cada manobra (para não ficar preso em canto).
+// Gira o mínimo de TEMPO_GIRO_MS e continua girando em passos curtos até haver DIST_LIVRE_CM livres à frente (no máximo TEMPO_GIRO_MAX_MS).
 void manobra() {
+  static int lado = 1;  // 1 = vira para a direita, -1 = para a esquerda
+  lado = -lado;
   parar();
   delay(150);
   motor(-VELOCIDADE_LENTA, -VELOCIDADE_LENTA);
   delay(TEMPO_RE_MS);
-  motor(VELOCIDADE_LENTA + 30, -(VELOCIDADE_LENTA + 30));
+  int v = VELOCIDADE_LENTA + 30;
+  unsigned long inicio = millis();
+  motor(lado * v, -lado * v);
   delay(TEMPO_GIRO_MS);
   parar();
+  delay(80);
+  while (distancia() < DIST_LIVRE_CM && millis() - inicio < TEMPO_GIRO_MAX_MS) {
+    motor(lado * v, -lado * v);
+    delay(100);
+    parar();
+    delay(60);
+  }
+  parar();
   preenchidas = 0;  // as leituras de antes da manobra não valem mais
+  filtro.esquecer();
 }
 
 void enviar(Leitura l) {
@@ -254,7 +271,7 @@ void loop() {
   if (millis() < proxima) return;
   proxima = millis() + PERIODO_MS;
 
-  float d = distancia();
+  float d = filtro.filtrar(distancia(), 2 * DIST_MINIMA_CM, DIST_MINIMA_CM - 1);
   float l = luz();
   if (millis() - ultimo_salvar > 60000) {
     salvar_calibracao();
@@ -339,6 +356,7 @@ void loop() {
       delay(250);
       parar();
       preenchidas = 0;
+      filtro.esquecer();
       em_vigor = 0;
       break;
   }

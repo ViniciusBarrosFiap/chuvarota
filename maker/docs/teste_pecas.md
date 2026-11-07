@@ -54,7 +54,7 @@ Grave o sketch de teste: `./maker/firmware/gravar.sh teste_pecas` e digite os co
 | # | Teste | Esperado |
 |---|---|---|
 | 6 | Rede, com o robô no colo | aparece `envio: {...} -> 201` e a leitura aparece na tela do MVP (https://chuvarota-85ixn.azurewebsites.net) |
-| 7 | Dabble: conectar em `ChuvaRota` ([dabble.md](dabble.md)) e dirigir com as setas | o carrinho anda e vira; a menos de 8 cm de um obstáculo ele não avança |
+| 7 | Dabble: conectar em `ChuvaRota` ([dabble.md](dabble.md)) e dirigir com as setas | o carrinho anda e vira; a menos de 25 cm de um obstáculo ele não avança |
 | 7b | Apertar o **triângulo** (apita 2 vezes) com um obstáculo à frente | modo autônomo: desvia sozinho. **X** volta ao manual |
 | 8 | Cobrir o LDR | anda devagar (pouca luz) |
 | 9 | Cobrir o LDR e pôr a mão na frente | para, apita 3 vezes e o alerta aparece no MVP |
@@ -64,7 +64,8 @@ Grave o sketch de teste: `./maker/firmware/gravar.sh teste_pecas` e digite os co
 Comandos no Monitor Serial com o robô rodando: `i` mostra a calibração do LDR; `r` apaga a calibração (use se o robô aprendeu um valor errado, por exemplo depois de um flash de câmera).
 
 ## 5. Ajustes sem mexer no código (`config.h`)
-- Gira pouco ou demais na manobra: `TEMPO_GIRO_MS`. Recua pouco: `TEMPO_RE_MS`.
+- Gira pouco ou demais na manobra: `TEMPO_GIRO_MS` (giro mínimo) e `TEMPO_GIRO_MAX_MS` (limite quando o caminho continua fechado). Recua pouco: `TEMPO_RE_MS`.
+- Ainda bate na parede: aumente `DIST_MINIMA_CM` (distância em que ele para) ou diminua `VELOCIDADE_NORMAL`. Vira cedo demais: diminua `DIST_MINIMA_CM`.
 - Muito rápido ou lento: `VELOCIDADE_NORMAL` e `VELOCIDADE_LENTA`.
 - Os motores zumbem e não andam: aumente `PWM_MINIMO`.
 Depois de mudar, rode `./gravar.sh` de novo.

@@ -50,10 +50,10 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 | `luz_piscando` | a luz oscila (lâmpada com defeito) | segue devagar e avisa ao MVP (no máximo a cada 30 s) |
 | `objeto_se_aproximando` | algo vem rápido na direção do robô | freia e recua antes de chegar perto |
 
-4. Uma regra de segurança fica **acima** do modelo: a menos de 8 cm o robô para, mesmo que o modelo erre. Situações de risco valem na hora; as demais só trocam depois de 2 decisões iguais seguidas.
+4. Uma regra de segurança fica **acima** do modelo: a menos de 25 cm (`DIST_MINIMA_CM`) o robô para, mesmo que o modelo erre. No modo autônomo ele então **recua, vira para o lado** (alternando esquerda e direita) e só segue quando houver 40 cm livres à frente. Um "sem eco" logo depois de uma leitura perto conta como obstáculo, e não como caminho livre. Situações de risco valem na hora; as demais só trocam depois de 2 decisões iguais seguidas.
 5. Outra tarefa do ESP32 envia a situação ao MVP a cada 5 s (e na hora no caso de alerta), por HTTPS com a hora acertada por NTP, sem travar o robô.
 
-**Controle pelo Dabble e autonomia:** por padrão o carrinho é dirigido pelo app Dabble (Bluetooth), e o **triângulo** alterna para o modo **autônomo**, em que ele decide sozinho com os sensores e o TinyML. Mesmo dirigido à mão, o robô não bate de frente (parada a 8 cm), classifica o ambiente e manda os alertas ao MVP. Botões e ajustes em [docs/dabble.md](docs/dabble.md).
+**Controle pelo Dabble e autonomia:** por padrão o carrinho é dirigido pelo app Dabble (Bluetooth), e o **triângulo** alterna para o modo **autônomo**, em que ele decide sozinho com os sensores e o TinyML. Mesmo dirigido à mão, o robô não bate de frente (ele para a 25 cm), classifica o ambiente e manda os alertas ao MVP. Botões e ajustes em [docs/dabble.md](docs/dabble.md).
 
 ## TinyML
 - Rede neural pequena: 5 entradas, camadas de 16 e 8 neurônios (ReLU) e 6 saídas, **286 parâmetros (cerca de 1 KB)**. O treino é em Python (`tinyml/treinar.py`, scikit-learn) e o resultado vira um arquivo C++ (`firmware/robo/modelo_tinyml.h`) que roda no ESP32 sem biblioteca nenhuma.
@@ -92,6 +92,7 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 
 ## Testes
 - `python maker/tinyml/testar_c.py`: o C++ decide igual ao Python.
+- `python maker/tinyml/testar_seguranca.py`: o filtro da distância trata "sem eco" logo depois de algo perto como obstáculo.
 - `python maker/tinyml/testar_direcao.py`: as setas e o joystick do Dabble viram o movimento certo das rodas (cima = frente, baixo = trás, esquerda e direita = virar para o lado).
 - `arduino-cli compile --fqbn esp32:esp32:esp32 maker/firmware/robo` (com um `config.h`): compila.
 - `pytest mvp`: o endpoint `/robo` (sem token, token errado, leitura inválida e válida).

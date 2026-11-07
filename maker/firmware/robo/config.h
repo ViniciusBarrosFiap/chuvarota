@@ -29,9 +29,13 @@
 #define VELOCIDADE_LENTA 120
 #define PWM_MINIMO 110  // abaixo disso os motores TT não vencem o atrito e só zumbem
 #define TEMPO_RE_MS 400
-#define TEMPO_GIRO_MS 450  // ajuste para o robô virar uns 90 graus
+#define TEMPO_GIRO_MS 450  // giro mínimo da manobra: ajuste para o robô virar uns 90 graus
+#define TEMPO_GIRO_MAX_MS 1500  // depois do giro mínimo ele continua girando até achar espaço livre, no máximo até aqui
 
-#define DIST_MINIMA_CM 8  // abaixo disso o robô para, mesmo que o modelo erre
+// Anti-colisão (vale no modo autônomo e no Dabble). Com o carrinho a ~0,4 m/s, a leitura a cada 0,1 s e a freada levam uns 10 a 15 cm:
+// por isso a parada é bem antes da parede. Se ainda bater, aumente DIST_MINIMA_CM ou diminua VELOCIDADE_NORMAL.
+#define DIST_MINIMA_CM 25  // algo mais perto que isso à frente: o robô para e (no autônomo) recua e vira para o lado, mesmo que o modelo erre
+#define DIST_LIVRE_CM 40  // na manobra, só para de girar quando houver pelo menos esta distância livre à frente
 
 // 1 = robô parado só imprimindo "luz,distancia_cm,classe" a cada 100 ms para coletar dados reais (ver docs/teste_pecas.md)
 #define MODO_COLETA 0
