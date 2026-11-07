@@ -85,7 +85,7 @@ Autonomia: depois de ligado, o robô não recebe nenhum comando manual.
 - `firmware/configurar.sh` e `firmware/gravar.sh`
 - `tinyml/` simulador dos sensores, características, treino, testes e coleta de dados reais
 - `simulador/` finge ser o robô para testar o endpoint do MVP
-- `docs/` ligação, testes de bancada e roteiro do vídeo
+- `docs/` ligação e testes de bancada
 
 ## Testes
 - `python maker/tinyml/testar_c.py`: o C++ decide igual ao Python.
@@ -98,4 +98,4 @@ Autonomia: depois de ligado, o robô não recebe nenhum comando manual.
 _A preencher depois dos testes de bancada: distâncias medidas, comportamento nas 6 situações, taxa de acerto com dados reais, vídeo._
 
 ## Vídeo
-Roteiro em [docs/roteiro_video.md](docs/roteiro_video.md). Link do vídeo: _a preencher_.
+Link do vídeo: _a preencher_.
