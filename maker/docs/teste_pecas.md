@@ -46,6 +46,7 @@ Grave o sketch de teste: `./maker/firmware/gravar.sh teste_pecas` e digite os co
 | 3 | `d` | mão a 10, 20 e 50 cm | valores perto de 10, 20 e 50 (erro de 1 a 2 cm). `-1` = sem eco (confira o divisor do ECHO) |
 | 4 | `l` | LDR coberto e com luz forte | valor baixo no escuro e alto com luz. **Não precisa calibrar**: o robô aprende o mais escuro e o mais claro que vê e guarda na memória |
 | 5 | `b` | buzzer | apita 0,3 s |
+| 5b | `s` | demonstração do sensor com os motores (rodas fora do chão); mão a menos de 20 cm do sensor | as rodas giram para frente; com a mão perto elas param e fazem a sequência do `m`; tirando a mão, voltam a girar. Digite qualquer coisa para sair |
 
 ## 4. O robô de verdade
 `./maker/firmware/gravar.sh` (compila, grava e abre o Monitor Serial).
