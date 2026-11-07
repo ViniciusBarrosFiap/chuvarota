@@ -112,6 +112,24 @@ void manobra() {
   preenchidas = 0;  // as leituras de antes da manobra não valem mais
 }
 
+// diagnóstico: conecta sem validar só para mostrar a cadeia que o ESP32 recebe (roda uma vez)
+void mostrar_cadeia() {
+  WiFiClientSecure c;
+  c.setInsecure();
+  c.setHandshakeTimeout(30);
+  if (!c.connect("chuvarota-85ixn.azurewebsites.net", 443)) { Serial.println("  cadeia: não conectou"); return; }
+  int n = 0;
+  for (const mbedtls_x509_crt *p = c.getPeerCertificate(); p && n < 6; p = p->next, n++) {
+    char dono[120], emissor[120];
+    mbedtls_x509_dn_gets(dono, sizeof(dono), &p->subject);
+    mbedtls_x509_dn_gets(emissor, sizeof(emissor), &p->issuer);
+    Serial.printf("  cadeia %d: %s <- %s\n", n, dono, emissor);
+  }
+  c.stop();
+}
+
+bool cadeia_mostrada = false;
+
 void enviar(Leitura l) {
   if (WiFi.status() != WL_CONNECTED) return;
   if (ESP.getMaxAllocHeap() < 45000) {  // o Bluetooth e o HTTPS dividem a memória; sem folga o TLS falha
@@ -137,6 +155,7 @@ void enviar(Leitura l) {
     Serial.printf("  falha: %s | erro TLS %d (%s) | memória livre %u, maior bloco %u | hora %ld | Wi-Fi %d dBm\n", HTTPClient::errorToString(codigo).c_str(), e, erro, ESP.getFreeHeap(), ESP.getMaxAllocHeap(), (long)time(nullptr), WiFi.RSSI());
   }
   http.end();
+  if (codigo <= 0 && !cadeia_mostrada) { cadeia_mostrada = true; mostrar_cadeia(); }
 }
 
 // o envio roda em outra tarefa para não deixar o robô parado esperando a rede
