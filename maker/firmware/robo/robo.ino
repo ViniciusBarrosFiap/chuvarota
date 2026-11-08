@@ -18,6 +18,7 @@
 #include "direcao.h"
 #include "modelo_tinyml.h"
 #include "seguranca.h"
+#include "sensor.h"
 
 // motores (ponte H L298N)
 const int ENA = 25, IN1 = 26, IN2 = 27;
@@ -76,19 +77,32 @@ void apitar(int vezes) {
   }
 }
 
-float uma_distancia() {
+// uma leitura do HC-SR04, só com o tempo do eco e a velocidade do som (sem a calibração do config.h)
+float uma_distancia_bruta() {
   digitalWrite(TRIG, LOW);
   delayMicroseconds(3);
   digitalWrite(TRIG, HIGH);
   delayMicroseconds(10);
   digitalWrite(TRIG, LOW);
   long us = pulseIn(ECHO, HIGH, 12000);
-  return us == 0 ? 200 : min(200.0f, us / 58.0f);  // sem eco = nada à frente
+  delay(SENSOR_INTERVALO_MS);  // deixa o eco anterior sumir antes da próxima leitura
+  return us == 0 ? SEM_ECO_CM : min(SEM_ECO_CM, us * cm_por_us(TEMPERATURA_C));  // sem eco = nada à frente
 }
 
+float uma_distancia() {
+  float cm = uma_distancia_bruta();
+  if (cm >= SEM_ECO_CM - 0.5f) return SEM_ECO_CM;
+  return constrain(cm * SENSOR_ESCALA + SENSOR_OFFSET_CM, 0.0f, SEM_ECO_CM);
+}
+
+// 3 leituras; se não concordam, até 5. Média das que concordam, sem as leituras falsas (ver sensor.h)
 float distancia() {
-  float a = uma_distancia(), b = uma_distancia(), c = uma_distancia();
-  return max(min(a, b), min(max(a, b), c));  // mediana de 3
+  return medir_adaptativo([] { return uma_distancia(); }, 3, 5);
+}
+
+// 7 leituras: para quando o carrinho está parado e dá tempo de medir com calma (depois de frear, nas calibrações)
+float distancia_precisa() {
+  return medir_adaptativo([] { return uma_distancia(); }, 7, 7);
 }
 
 float luz() {
@@ -187,7 +201,7 @@ void passo_ia(float d, bool escuro, bool treinando) {
   } else if (x.freio) {  // chegou perto demais: freio de segurança (um erro, que o agente aprende a evitar)
     parar();
     delay(80);  // espera o carrinho parar de verdade
-    float depois = distancia();  // quanto espaço sobrou entre o carrinho parado e o obstáculo
+    float depois = distancia_precisa();  // quanto espaço sobrou entre o carrinho parado e o obstáculo
     agente.freou(depois, treinando);  // ajusta a distância do freio: parou perto demais = freia mais longe; sobrou espaço = pode chegar mais perto
     if (agente.margem_depois != agente.margem_antes)
       Serial.printf("freio: parou a %.0f cm do obstáculo | distância do freio %.0f -> %.0f cm\n", depois, agente.margem_antes, agente.margem_depois);
@@ -330,6 +344,136 @@ void botoes() {
 }
 #endif
 
+// ---- calibração do carrinho (comandos no Monitor Serial, com o carrinho no modo manual) ---------------------------------------------
+void esperar_tecla(const char* mensagem) {
+  Serial.println(mensagem);
+  while (Serial.available()) Serial.read();
+  while (!Serial.available()) delay(10);
+  delay(50);
+  while (Serial.available()) Serial.read();
+}
+
+void estatistica(const float* v, int n, float* media, float* desvio, int* sem_eco) {
+  float soma = 0, soma2 = 0;
+  int k = 0;
+  *sem_eco = 0;
+  for (int i = 0; i < n; i++) {
+    if (v[i] >= SEM_ECO_CM - 0.5f) {
+      (*sem_eco)++;
+      continue;
+    }
+    soma += v[i];
+    soma2 += v[i] * v[i];
+    k++;
+  }
+  *media = k ? soma / k : 0;
+  *desvio = k > 1 ? sqrtf(fmaxf(0, soma2 / k - *media * *media)) : 0;
+}
+
+// p: o quanto o sensor oscila medindo um alvo parado, com uma leitura, com a mediana de 3 (antigo) e com as 5 leituras com descarte (novo)
+void teste_precisao() {
+  esperar_tecla("Precisão: ponha uma parede ou caixa lisa de frente para o sensor, a uns 50 cm, SEM mexer nela. Envie qualquer tecla.");
+  float bruto[90], mediana3[30], novo[18];
+  for (int i = 0; i < 90; i++) bruto[i] = uma_distancia();
+  for (int g = 0; g < 30; g++) {
+    float a = bruto[3 * g], b = bruto[3 * g + 1], c = bruto[3 * g + 2];
+    mediana3[g] = max(min(a, b), min(max(a, b), c));
+  }
+  for (int g = 0; g < 18; g++) novo[g] = combinar_leituras(&bruto[5 * g], 5);
+  float m, d;
+  int se;
+  estatistica(bruto, 90, &m, &d, &se);
+  Serial.printf("  uma leitura:            média %.1f cm | oscilação (desvio) %.2f cm | sem eco %d de 90\n", m, d, se);
+  estatistica(mediana3, 30, &m, &d, &se);
+  Serial.printf("  mediana de 3 (antigo):  média %.1f cm | oscilação (desvio) %.2f cm | sem eco %d de 30\n", m, d, se);
+  estatistica(novo, 18, &m, &d, &se);
+  Serial.printf("  5 com descarte (novo):  média %.1f cm | oscilação (desvio) %.2f cm | sem eco %d de 18\n", m, d, se);
+  Serial.println("Se a média não bate com a régua, rode o comando k para calibrar escala e offset.");
+}
+
+// k: mede a parede a 20, 50 e 100 cm (com régua) e calcula SENSOR_ESCALA e SENSOR_OFFSET_CM
+void calibrar_sensor() {
+  const float alvos[3] = {20, 50, 100};
+  float medido[3];
+  for (int i = 0; i < 3; i++) {
+    char mensagem[140];
+    snprintf(mensagem, sizeof(mensagem), "Calibração do sensor (%d de 3): parede lisa, de frente, a EXATOS %.0f cm do sensor (meça com régua). Envie qualquer tecla.", i + 1, alvos[i]);
+    esperar_tecla(mensagem);
+    float v[15];
+    for (int j = 0; j < 15; j++) v[j] = uma_distancia_bruta();
+    medido[i] = combinar_leituras(v, 15);
+    Serial.printf("  o sensor mediu %.1f cm\n", medido[i]);
+    if (medido[i] >= SEM_ECO_CM - 0.5f) {
+      Serial.println("  sem eco: confira a parede e o sensor e rode k de novo");
+      return;
+    }
+  }
+  float escala, offset;
+  if (!ajustar_reta(medido, alvos, 3, &escala, &offset)) {
+    Serial.println("não deu para calcular: as 3 medidas ficaram iguais");
+    return;
+  }
+  Serial.println("Cole no config.h (substituindo os valores de SENSOR_ESCALA e SENSOR_OFFSET_CM) e grave de novo:");
+  Serial.printf("#define SENSOR_ESCALA %.3ff\n#define SENSOR_OFFSET_CM %.1ff\n", escala, offset);
+  for (int i = 0; i < 3; i++) Serial.printf("  com isso: %.0f cm -> %.1f cm\n", alvos[i], medido[i] * escala + offset);
+}
+
+// v: anda 0,8 s de frente para uma parede e mede quanto se aproximou
+void teste_velocidade() {
+  esperar_tecla("Velocidade: carrinho no chão, de frente para uma parede lisa a uns 100 cm, com o caminho livre (ele anda uns 30 cm). Envie qualquer tecla.");
+  const int tempo_ms = 800;
+  const int pwm[2] = {VELOCIDADE_NORMAL, VELOCIDADE_LENTA};
+  const char* nomes[2] = {"NORMAL", "LENTO"};
+  float resultado[2] = {0, 0};
+  for (int i = 0; i < 2; i++) {
+    float antes = distancia_precisa();
+    if (antes < 70 || antes >= SEM_ECO_CM - 0.5f) {
+      Serial.printf("  preciso de 70 a 190 cm de parede à frente (medi %.0f). Afaste o carrinho e rode v de novo\n", antes);
+      return;
+    }
+    motor(pwm[i], pwm[i]);
+    delay(tempo_ms);
+    parar();
+    delay(400);
+    float depois = distancia_precisa();
+    resultado[i] = (antes - depois) / (tempo_ms / 1000.0f);
+    Serial.printf("  %s (PWM %d): foi de %.0f para %.0f cm = %.0f cm/s\n", nomes[i], pwm[i], antes, depois, resultado[i]);
+    if (i == 0) esperar_tecla("  Leve o carrinho de volta a uns 100 cm da parede e envie qualquer tecla.");
+  }
+  Serial.println("Cole no config.h (só a simulação do treino usa) :");
+  Serial.printf("#define CARRINHO_CM_S_NORMAL %.0f\n#define CARRINHO_CM_S_LENTO %.0f\n", resultado[0], resultado[1]);
+}
+
+// g: gira 0,3 s de frente para uma parede e calcula o ângulo pela mudança da distância
+void teste_giro() {
+  esperar_tecla("Giro: carrinho no chão, de frente (reto) para uma parede lisa e larga, a uns 50 cm. Ele vai girar um pouco no lugar. Envie qualquer tecla.");
+  float antes = distancia_precisa();
+  if (antes < 25 || antes > 120) {
+    Serial.printf("  preciso da parede entre 25 e 120 cm (medi %.0f). Ajuste e rode g de novo\n", antes);
+    return;
+  }
+  const int tempo_ms = 300;
+  int v = VELOCIDADE_LENTA + 30;  // o mesmo giro das manobras
+  motor(v, -v);
+  delay(tempo_ms);
+  parar();
+  delay(400);
+  float depois = distancia_precisa();
+  if (depois >= SEM_ECO_CM - 0.5f) {
+    Serial.println("  o sensor perdeu a parede (girou demais ou a parede é pequena). Use uma parede maior e rode g de novo");
+    return;
+  }
+  float graus = angulo_giro_graus(antes, depois, SENSOR_DIST_EIXO_CM);
+  Serial.printf("  a parede foi de %.0f para %.0f cm: girou uns %.0f graus em %d ms = %.0f graus/s\n", antes, depois, graus, tempo_ms, graus / (tempo_ms / 1000.0f));
+  if (graus < 8 || graus > 60) Serial.println("  resultado pouco confiável (vale de 10 a 60 graus): ajuste a distância da parede e repita");
+  Serial.printf("Cole no config.h (só a simulação do treino usa) :\n#define CARRINHO_GRAUS_S %.0f\n", graus / (tempo_ms / 1000.0f));
+}
+
+void ajuda() {
+  Serial.println("comandos: a treino | u IA | q política aprendida | e curva de aprendizado | z apaga o aprendizado | i/r calibração do LDR");
+  Serial.println("          p precisão do sensor | k calibrar o sensor | v medir a velocidade | g medir o giro (estes 4 só no modo manual)");
+}
+
 void comandos_serial() {
   while (Serial.available()) {
     char c = Serial.read();
@@ -353,6 +497,20 @@ void comandos_serial() {
       agente.zerar();
       salvar_agente();
       Serial.println("aprendizado apagado");
+    } else if (c == 'p' || c == 'k' || c == 'v' || c == 'g') {  // calibrações: bloqueiam o robô por alguns segundos
+      if (modo != MANUAL) {
+        Serial.println("estes comandos só funcionam no modo manual (aperte X no Dabble)");
+      } else if (c == 'p') {
+        teste_precisao();
+      } else if (c == 'k') {
+        calibrar_sensor();
+      } else if (c == 'v') {
+        teste_velocidade();
+      } else {
+        teste_giro();
+      }
+    } else if (c == '?') {
+      ajuda();
     }
 #if MODO_COLETA
     if (c >= '0' && c <= '5') rotulo_coleta = c - '0';

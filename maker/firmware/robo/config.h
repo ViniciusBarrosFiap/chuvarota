@@ -23,6 +23,19 @@
 #define LDR_ESCURO 300
 #define LDR_CLARO 3200
 
+// Sensor de distância. A leitura passa por: tempo do eco x velocidade do som (pela temperatura) x SENSOR_ESCALA + SENSOR_OFFSET_CM.
+// Para acertar escala e offset do SEU sensor, use o comando k no Monitor Serial (ele imprime os valores para colar aqui).
+#define TEMPERATURA_C 25  // temperatura do ambiente: o som é ~0,6 m/s mais rápido a cada grau
+#define SENSOR_ESCALA 1.000f
+#define SENSOR_OFFSET_CM 0.0f
+#define SENSOR_INTERVALO_MS 5  // pausa entre uma leitura e outra, para o eco anterior sumir
+#define SENSOR_DIST_EIXO_CM 8  // distância do sensor ao centro do carrinho (eixo do giro), usada no teste de giro (comando g)
+
+// O carrinho de verdade (só a simulação do treino usa estes números; o comando v mede a velocidade e o g mede o giro, e imprimem o valor para colar aqui)
+#define CARRINHO_CM_S_NORMAL 42  // velocidade andando em VELOCIDADE_NORMAL
+#define CARRINHO_CM_S_LENTO 26   // velocidade andando em VELOCIDADE_LENTA
+#define CARRINHO_GRAUS_S 110     // giro no lugar, em graus por segundo
+
 // motores: se uma roda girar ao contrário do esperado, troque 0 por 1 aqui (em vez de mexer nos fios)
 #define INVERTE_ESQUERDO 0
 #define INVERTE_DIREITO 0

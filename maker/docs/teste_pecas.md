@@ -67,6 +67,18 @@ Grave o sketch de teste: `./maker/firmware/gravar.sh teste_pecas` e digite os co
 
 Comandos no Monitor Serial com o robô rodando: `i` mostra a calibração do LDR; `r` apaga a calibração (use se o robô aprendeu um valor errado, por exemplo depois de um flash de câmera).
 
+## 4b. Calibrar o sensor e o carrinho (comandos no Monitor Serial, 115200, modo manual)
+Faça uma vez com o carrinho montado. Cada comando pede o que fazer e espera você enviar uma tecla. Depois, cole os valores impressos no `config.h` e grave de novo.
+
+| Comando | O que faz | Resultado esperado |
+|---|---|---|
+| `p` | mede 90 vezes um alvo parado a uns 50 cm | oscilação (desvio) de 1 cm ou menos no método novo; se a média não bate com a régua, rode o `k` |
+| `k` | calibra o sensor com a parede a 20, 50 e 100 cm (meça com régua) | imprime `SENSOR_ESCALA` e `SENSOR_OFFSET_CM` e mostra o erro que sobra |
+| `v` | o carrinho anda 0,8 s de frente para uma parede a uns 100 cm (ele anda uns 30 cm) e mede a velocidade | imprime `CARRINHO_CM_S_NORMAL` e `CARRINHO_CM_S_LENTO` |
+| `g` | o carrinho gira 0,3 s de frente para uma parede reta e larga a uns 50 cm e calcula o ângulo | imprime `CARRINHO_GRAUS_S` (vale de 10 a 60 graus de giro) |
+
+Os comandos `v` e `g` fazem o carrinho andar: use o chão, com a frente livre. Os valores de `v` e `g` só alimentam a simulação do treino; o robô de verdade não os usa.
+
 ## 5. Ajustes sem mexer no código (`config.h`)
 - Gira pouco ou demais na manobra: `TEMPO_GIRO_MS` (giro mínimo) e `TEMPO_GIRO_MAX_MS` (limite quando o caminho continua fechado). Recua pouco: `TEMPO_RE_MS`.
 - Com as **rodas no ar** (bancada), os modos autônomo, treino e IA acham que o carrinho ficou preso (a distância não muda enquanto ele "anda") e ficam fazendo manobra de fuga. É normal: teste esses modos no chão.

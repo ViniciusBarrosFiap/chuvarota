@@ -16,6 +16,7 @@
 
 #include "aprendizado.h"
 #include "seguranca.h"
+#include "sensor.h"
 
 static std::mt19937 gen(1);
 static float normal(float desvio) { return std::normal_distribution<float>(0, desvio)(gen); }
@@ -92,10 +93,9 @@ static float medir_uma(const Mundo& w, const Robo& r) {
   return std::min(200.0f, std::max(0.0f, t + normal(1.0f + 0.005f * t)));
 }
 
-// mediana de 3, como o robô faz
+// 3 leituras e, se não concordam, até 5, com descarte das falsas: o mesmo código do robô (sensor.h)
 static float medir(const Mundo& w, const Robo& r) {
-  float a = medir_uma(w, r), b = medir_uma(w, r), c = medir_uma(w, r);
-  return std::max(std::min(a, b), std::min(std::max(a, b), c));
+  return medir_adaptativo([&] { return medir_uma(w, r); }, 3, 5);
 }
 
 struct Contagem {
@@ -121,14 +121,14 @@ static void mover(const Mundo& w, Robo& r, float v, float giro, float tempo, Con
 static float g_v = 0;  // velocidade da última ação para frente (para o carrinho continuar andando um pouco depois de frear)
 
 static void executar(const Mundo& w, Robo& r, Acao a, float tempo, Contagem& c) {
-  const float GIRO = 110 * PI_ / 180;
-  g_v = (a == FRENTE) ? 42 : (a == FRENTE_LENTO ? 26 : 0);
+  const float GIRO = CARRINHO_GRAUS_S * PI_ / 180;  // os números do carrinho vêm do config.h (o robô mede com os comandos v e g)
+  g_v = (a == FRENTE) ? CARRINHO_CM_S_NORMAL : (a == FRENTE_LENTO ? CARRINHO_CM_S_LENTO : 0);
   switch (a) {
-    case FRENTE: mover(w, r, 42 * (1 + normal(0.1f)), 0, tempo, c); break;
-    case FRENTE_LENTO: mover(w, r, 26 * (1 + normal(0.1f)), 0, tempo, c); break;
+    case FRENTE: mover(w, r, CARRINHO_CM_S_NORMAL * (1 + normal(0.1f)), 0, tempo, c); break;
+    case FRENTE_LENTO: mover(w, r, CARRINHO_CM_S_LENTO * (1 + normal(0.1f)), 0, tempo, c); break;
     case GIRAR_ESQ: mover(w, r, 0, GIRO * (1 + normal(0.3f)), tempo, c); break;
     case GIRAR_DIR: mover(w, r, 0, -GIRO * (1 + normal(0.3f)), tempo, c); break;
-    case RE: mover(w, r, -22, 0, tempo, c); break;
+    case RE: mover(w, r, -0.85f * CARRINHO_CM_S_LENTO, 0, tempo, c); break;
     default: break;
   }
 }
