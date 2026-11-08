@@ -145,7 +145,8 @@ void carregar_agente() {
     memoria.getBytes("agente", &agente.m, sizeof(agente.m));
     if (agente.m.versao != VERSAO_MEMORIA) agente.zerar();  // memória de uma versão antiga: recomeça
   }
-  Serial.printf("aprendizado: %u passos de treino já feitos (exploração %.0f%%)\n", (unsigned)agente.m.passos, agente.epsilon() * 100);
+  Serial.printf("aprendizado: %u passos de treino já feitos (exploração %.0f%%, distância do freio %.0f cm)\n", (unsigned)agente.m.passos, agente.epsilon() * 100,
+                agente.m.freio_cm[0]);
 }
 
 // o que o robô faz em cada ação do agente
@@ -163,13 +164,13 @@ void executar_acao(Acao a, bool escuro) {
 
 void imprimir_bloco() {
   const Bloco& b = agente.m.historico[(agente.m.blocos - 1) % N_BLOCOS];
-  Serial.printf("treino: bloco %u | passos %u | exploração %.0f%% | nota média %.2f | quase-batidas %u | freios %u\n", (unsigned)agente.m.blocos, (unsigned)agente.m.passos,
-                agente.epsilon() * 100, b.recompensa_media, b.quase_batidas, b.freios);
+  Serial.printf("treino: bloco %u | passos %u | exploração %.0f%% | nota média %.2f | quase-batidas %u | freios %u | distância do freio %u cm\n", (unsigned)agente.m.blocos,
+                (unsigned)agente.m.passos, agente.epsilon() * 100, b.recompensa_media, b.quase_batidas, b.freios, b.margem_cm);
 }
 
 // um ciclo dos modos treino e IA: o agente escolhe a ação; o freio de segurança e a fuga valem mais que ele
 void passo_ia(float d, bool escuro, bool treinando) {
-  Decisao x = agente.decidir(d, treinando, treinando);
+  Decisao x = agente.decidir(d, treinando, treinando, escuro);
   digitalWrite(LED, x.explorou);  // acende nos ciclos em que ele testa uma ação aleatória (explorando)
   if (x.escapar) {  // preso: ré maior e giro para o lado
     Serial.println("preso: fuga");
@@ -185,7 +186,11 @@ void passo_ia(float d, bool escuro, bool treinando) {
     preenchidas = 0;
   } else if (x.freio) {  // chegou perto demais: freio de segurança (um erro, que o agente aprende a evitar)
     parar();
-    delay(60);
+    delay(80);  // espera o carrinho parar de verdade
+    float depois = distancia();  // quanto espaço sobrou entre o carrinho parado e o obstáculo
+    agente.freou(depois, treinando);  // ajusta a distância do freio: parou perto demais = freia mais longe; sobrou espaço = pode chegar mais perto
+    if (agente.margem_depois != agente.margem_antes)
+      Serial.printf("freio: parou a %.0f cm do obstáculo | distância do freio %.0f -> %.0f cm\n", depois, agente.margem_antes, agente.margem_depois);
     if (TREINO_APITAR_ERRO && treinando) {
       digitalWrite(BUZZER, HIGH);
       delay(40);
@@ -219,14 +224,18 @@ void trocar_modo(int novo) {
 
 // o que ele aprendeu: a melhor ação para cada situação (depois de uma ação de andar)
 void imprimir_politica() {
-  static const char* FAIXAS[] = {"< 20 cm (freio)", "20 a 30 cm", "30 a 50 cm", "50 a 90 cm", "90 a 190 cm", "sem eco"};
   static const char* TENDENCIAS[] = {"aproximando", "estável", "afastando"};
-  Serial.printf("política aprendida (%u passos de treino). Melhor ação quando a distância está...\n", (unsigned)agente.m.passos);
+  float mg = agente.m.freio_cm[0], lim[5] = {mg, mg + TREINO_PERIGO_EXTRA_CM, mg + 30, mg + 70, 190};  // as faixas andam com a distância do freio
+  Serial.printf("política aprendida (%u passos de treino; distância do freio: %.0f cm andando rápido, %.0f cm devagar). Melhor ação quando a distância está...\n",
+                (unsigned)agente.m.passos, agente.m.freio_cm[0], agente.m.freio_cm[1]);
   for (int f = 0; f < N_FAIXAS; f++) {
+    char faixa[24];
+    if (f == 0) snprintf(faixa, sizeof(faixa), "< %.0f cm (freio)", lim[0]);
+    else if (f == N_FAIXAS - 1) snprintf(faixa, sizeof(faixa), "sem eco");
+    else snprintf(faixa, sizeof(faixa), "%.0f a %.0f cm", lim[f - 1], lim[f]);
     for (int t = 0; t < N_TENDENCIAS; t++) {
       int s = (f * N_TENDENCIAS + t) * N_GIROS;  // última ação = andou
-      Acao a = agente.melhor_acao(s);
-      Serial.printf("  %-16s %-12s -> %s\n", FAIXAS[f], TENDENCIAS[t], nome_acao(a));
+      Serial.printf("  %-18s %-12s -> %s\n", faixa, TENDENCIAS[t], nome_acao(agente.melhor_acao(s)));
     }
   }
 }
@@ -234,10 +243,10 @@ void imprimir_politica() {
 // a curva de aprendizado, em CSV (copie do Monitor Serial): o treino melhora se as quase-batidas e os freios caem
 void imprimir_historico() {
   uint32_t total = agente.m.blocos, primeiro = total > N_BLOCOS ? total - N_BLOCOS : 0;
-  Serial.printf("bloco,passos_de_treino,exploracao_pct,nota_media,quase_batidas,freios  (cada bloco = %d passos)\n", (int)PASSOS_POR_BLOCO);
+  Serial.printf("bloco,passos_de_treino,nota_media,quase_batidas,freios,distancia_do_freio_cm  (cada bloco = %d passos)\n", (int)PASSOS_POR_BLOCO);
   for (uint32_t i = primeiro; i < total; i++) {
     const Bloco& b = agente.m.historico[i % N_BLOCOS];
-    Serial.printf("%u,%u,,%.3f,%u,%u\n", (unsigned)(i + 1), (unsigned)((i + 1) * PASSOS_POR_BLOCO), b.recompensa_media, b.quase_batidas, b.freios);
+    Serial.printf("%u,%u,%.3f,%u,%u,%u\n", (unsigned)(i + 1), (unsigned)((i + 1) * PASSOS_POR_BLOCO), b.recompensa_media, b.quase_batidas, b.freios, b.margem_cm);
   }
 }
 

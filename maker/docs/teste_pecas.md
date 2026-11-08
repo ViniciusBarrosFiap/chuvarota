@@ -62,6 +62,7 @@ Grave o sketch de teste: `./maker/firmware/gravar.sh teste_pecas` e digite os co
 | 11 | Mão vindo rápido na direção do robô | freia e recua antes de chegar perto |
 | 12 | **Modo treino** (círculo no Dabble ou `a` no monitor), **no chão**, em um espaço fechado e sem degraus. Deixe uns 10 a 20 minutos | anda, testa ações aleatórias (LED aceso), dá um bip a cada freio de segurança e, no Monitor Serial, aparece `treino: bloco ...` a cada 300 passos. Os bips e as "quase-batidas" devem ficar mais raros com o tempo |
 | 13 | `q` no Monitor Serial depois do treino | mostra a melhor ação para cada distância: longe anda, perto vira |
+| 13b | Observe as linhas `freio: parou a X cm do obstáculo` no Monitor Serial (com o USB) | a distância do freio vai de 20 para menos se ele para com folga, e volta a subir se parar a menos de 6 cm. Se ele **tocar** o obstáculo, suba `TREINO_MARGEM_MIN_CM` |
 | 14 | **Modo IA** (Start ou `u`) no mesmo espaço | anda desviando sem explorar. Para repetir em outro ambiente, apague com `z` e treine de novo |
 
 Comandos no Monitor Serial com o robô rodando: `i` mostra a calibração do LDR; `r` apaga a calibração (use se o robô aprendeu um valor errado, por exemplo depois de um flash de câmera).

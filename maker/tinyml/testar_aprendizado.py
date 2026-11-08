@@ -12,19 +12,20 @@ main = r"""#include <stdio.h>
 int main() {
   // estados
   SAIDA("estados", N_ESTADOS);
-  SAIDA("estado_min", codigo_estado(0, -50, 0));
-  SAIDA("estado_max", codigo_estado(200, 50, 3));
-  SAIDA("faixa_15", faixa_dist(15)); SAIDA("faixa_25", faixa_dist(25)); SAIDA("faixa_40", faixa_dist(40));
-  SAIDA("faixa_70", faixa_dist(70)); SAIDA("faixa_150", faixa_dist(150)); SAIDA("faixa_200", faixa_dist(200));
+  SAIDA("estado_min", codigo_estado(0, -50, 0, 20));
+  SAIDA("estado_max", codigo_estado(200, 50, 3, 20));
+  SAIDA("faixa_15", faixa_dist(15, 20)); SAIDA("faixa_25", faixa_dist(25, 20)); SAIDA("faixa_40", faixa_dist(40, 20));
+  SAIDA("faixa_70", faixa_dist(70, 20)); SAIDA("faixa_150", faixa_dist(150, 20)); SAIDA("faixa_200", faixa_dist(200, 20));
+  SAIDA("faixa_25_freio12", faixa_dist(25, 12));  // com o freio mais perto, 25 cm já é "perto", e não "perigo"
   // notas
-  SAIDA("nota_frente_livre", recompensa(FRENTE, 150, 144));
-  SAIDA("nota_frente_devagar_livre", recompensa(FRENTE_LENTO, 150, 144));
-  SAIDA("nota_frente_quase_batida", recompensa(FRENTE, 40, 27));
-  SAIDA("nota_frente_freio", recompensa(FRENTE, 30, 18));
-  SAIDA("nota_frente_travado", recompensa(FRENTE, 60, 60));
-  SAIDA("nota_girar_a_toa", recompensa(GIRAR_ESQ, 150, 150));
-  SAIDA("nota_girar_e_abriu", recompensa(GIRAR_DIR, 35, 70));
-  SAIDA("nota_re_a_toa", recompensa(RE, 150, 156));
+  SAIDA("nota_frente_livre", recompensa(FRENTE, 150, 144, 20));
+  SAIDA("nota_frente_devagar_livre", recompensa(FRENTE_LENTO, 150, 144, 20));
+  SAIDA("nota_frente_quase_batida", recompensa(FRENTE, 40, 27, 20));
+  SAIDA("nota_frente_freio", recompensa(FRENTE, 30, 18, 20));
+  SAIDA("nota_frente_travado", recompensa(FRENTE, 60, 60, 20));
+  SAIDA("nota_girar_a_toa", recompensa(GIRAR_ESQ, 150, 150, 20));
+  SAIDA("nota_girar_e_abriu", recompensa(GIRAR_DIR, 35, 70, 20));
+  SAIDA("nota_re_a_toa", recompensa(RE, 150, 156, 20));
   // aprendizado: sem palpite, uma ação com nota boa passa a ter valor positivo e a ruim, negativo
   Agente a;
   a.zerar(false);
@@ -57,14 +58,39 @@ int main() {
   for (int i = 0; i < PASSOS_POR_BLOCO + 5; i++) f.decidir(100, false, true);
   SAIDA("blocos_fechados", f.m.blocos);
   SAIDA("bloco_fechou_flag", f.fechou_bloco);
+  // distância do freio adaptativa
+  Agente h;
+  h.zerar(false);
+  SAIDA("freio_inicial", h.m.freio_cm[0]);
+  h.decidir(150, false, false);
+  h.decidir(15, false, false);        // freio: guarda que foi uma andada rápida
+  h.freou(30, true);                  // parou a 30 cm: sobrou espaço
+  SAIDA("freio_apos_sobrar_espaco", h.m.freio_cm[0]);
+  h.freou(30, false);                 // sem permissão de diminuir (modo IA): não muda
+  SAIDA("freio_sem_permissao", h.m.freio_cm[0]);
+  h.freou(3, true);                   // parou a 3 cm: perto demais
+  SAIDA("freio_apos_parar_perto", h.m.freio_cm[0]);
+  h.freou(200, true);                 // sumiu o eco
+  SAIDA("freio_apos_perder_eco", h.m.freio_cm[0]);
+  for (int i = 0; i < 100; i++) h.freou(30, true);
+  SAIDA("freio_minimo", h.m.freio_cm[0]);
+  for (int i = 0; i < 100; i++) h.freou(2, true);
+  SAIDA("freio_maximo", h.m.freio_cm[0]);
+  Agente fixo;
+  fixo.zerar(false);
+  fixo.adaptar_margem = false;
+  fixo.decidir(150, false, false);
+  fixo.decidir(15, false, false);
+  fixo.freou(30, true);
+  SAIDA("freio_fixo", fixo.m.freio_cm[0]);
   // tamanho do que vai para a memória flash
   SAIDA("bytes_memoria", sizeof(Memoria));
   // com o palpite inicial, a regra antiga: longe anda, perto vira
   Agente g;
   g.zerar(true);
-  SAIDA("palpite_longe", g.melhor_acao(codigo_estado(150, -5.5f, 0)));
-  SAIDA("palpite_perto", g.melhor_acao(codigo_estado(25, -5, 0)));
-  SAIDA("palpite_travado", g.melhor_acao(codigo_estado(60, 0, 0)));
+  SAIDA("palpite_longe", g.melhor_acao(codigo_estado(150, -5.5f, 0, 20)));
+  SAIDA("palpite_perto", g.melhor_acao(codigo_estado(25, -5, 0, 20)));
+  SAIDA("palpite_travado", g.melhor_acao(codigo_estado(60, 0, 0, 20)));
 }
 """
 
@@ -95,6 +121,12 @@ confere("freio de segurança perto demais, sem fuga na primeira vez", v["freio_p
 confere("5 freios seguidos viram uma fuga", v["fugas_em_5_freios"] >= 1)
 confere("a exploração cai com o treino", v["epsilon_apos_10000"] < v["epsilon_inicio"] and v["epsilon_apos_10000"] >= 0.05)
 confere("o histórico fecha um bloco a cada 300 passos", v["blocos_fechados"] == 1 and v["bloco_fechou_flag"] == 1)
+confere("freio adaptativo: sobrou espaço = freia 1 cm mais perto", v["freio_inicial"] == 20 and v["freio_apos_sobrar_espaco"] == 19)
+confere("freio adaptativo: sem permissão (modo IA) ele não diminui", v["freio_sem_permissao"] == 19)
+confere("freio adaptativo: parou perto demais = +2, perdeu o eco = +3", v["freio_apos_parar_perto"] == 21 and v["freio_apos_perder_eco"] == 24)
+confere("freio adaptativo: respeita o mínimo e o máximo do config.h", v["freio_minimo"] == 12 and v["freio_maximo"] == 30)
+confere("freio fixo (adaptar_margem desligado) não muda", v["freio_fixo"] == 20)
+confere("as faixas andam com a distância do freio", v["faixa_25_freio12"] == 2 and v["faixa_25"] == 1)
 confere("o que vai para a memória flash cabe com folga (limite de 4000 bytes por valor)", v["bytes_memoria"] < 4000, f"({v['bytes_memoria']:.0f} bytes)")
 confere("palpite inicial: longe anda, perto vira, travado vira", v["palpite_longe"] in (0, 1) and v["palpite_perto"] in (2, 3) and v["palpite_travado"] in (2, 3))
 assert erros == 0, f"{erros} verificação(ões) do aprendizado falharam"

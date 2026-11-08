@@ -38,10 +38,17 @@
 #define DIST_MINIMA_CM 25  // algo mais perto que isso à frente: o robô para e (no autônomo) recua e vira para o lado, mesmo que o modelo erre
 #define DIST_LIVRE_CM 40  // na manobra, só para de girar quando houver pelo menos esta distância livre à frente
 
-// Modo treino (aprendizado por reforço, ver aprendizado.h). A "quase batida" é o único erro que ele pode cometer: o freio de segurança
-// sempre age antes de bater. Dentro de TREINO_DIST_PERIGO_CM ele perde pontos; dentro de TREINO_DIST_FREIO_CM o freio recua o carrinho.
-#define TREINO_DIST_PERIGO_CM 30
-#define TREINO_DIST_FREIO_CM 20
+// Modo treino (aprendizado por reforço, ver aprendizado.h). O freio de segurança sempre age antes de bater e o robô vai ajustando sozinho a
+// distância dele: começa em TREINO_DIST_FREIO_CM e, a cada freada, mede quanto espaço sobrou entre o carrinho parado e o obstáculo.
+// Sobrou mais que TREINO_FOLGA_MAX_CM: da próxima vez freia 1 cm mais perto. Sobrou menos que TREINO_FOLGA_MIN_CM (ou o sensor perdeu o eco):
+// freia 2 a 3 cm mais longe. Nunca fica fora do intervalo [TREINO_MARGEM_MIN_CM, TREINO_MARGEM_MAX_CM].
+#define TREINO_DIST_FREIO_CM 20  // distância do freio no começo (o robô a ajusta depois)
+#define TREINO_ADAPTAR_MARGEM 1  // 0 = a distância do freio fica sempre em TREINO_DIST_FREIO_CM
+#define TREINO_MARGEM_MIN_CM 12  // o freio nunca chega mais perto que isso (é o limite de segurança: só diminua depois de testar)
+#define TREINO_MARGEM_MAX_CM 30
+#define TREINO_FOLGA_MIN_CM 6   // depois de freado, quer ficar pelo menos a esta distância do obstáculo
+#define TREINO_FOLGA_MAX_CM 10  // se sobrar mais que isso, pode chegar mais perto da próxima vez
+#define TREINO_PERIGO_EXTRA_CM 10  // perde pontos quando chega a menos de (distância do freio + isto)
 #define TREINO_CONHECIMENTO_INICIAL 1  // 1 = começa com a regra antiga como palpite fraco (aprende bem mais rápido); 0 = começa do zero
 #define TREINO_APITAR_ERRO 1  // 1 = um "bip" curto a cada freio de segurança, para você ouvir os erros acontecendo
 

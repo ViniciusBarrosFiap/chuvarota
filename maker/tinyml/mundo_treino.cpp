@@ -58,18 +58,23 @@ struct Mundo {
 
 struct Robo { float x, y, th; };
 
-static Mundo sala_aleatoria(Robo& r) {
-  Mundo w;
-  w.W = uniforme(200, 400);
-  w.H = uniforme(200, 400);
-  int n = 2 + gen() % 5;
-  for (int i = 0; i < n; i++) w.o.push_back({uniforme(30, w.W - 30), uniforme(30, w.H - 30), uniforme(6, 18)});
-  do {
-    r.x = uniforme(R, w.W - R);
-    r.y = uniforme(R, w.H - R);
-  } while (!w.livre(r.x, r.y));
-  r.th = uniforme(0, 2 * PI_);
-  return w;
+// apertada = sala pequena e cheia de obstáculos, onde uma distância de freio grande atrapalha
+static Mundo sala_aleatoria(Robo& r, bool apertada = false) {
+  for (;;) {
+    Mundo w;
+    w.W = apertada ? uniforme(130, 220) : uniforme(200, 400);
+    w.H = apertada ? uniforme(130, 220) : uniforme(200, 400);
+    int n = apertada ? 4 + gen() % 4 : 2 + gen() % 5;
+    for (int i = 0; i < n; i++) w.o.push_back({uniforme(25, w.W - 25), uniforme(25, w.H - 25), apertada ? uniforme(8, 16) : uniforme(6, 18)});
+    for (int tentativa = 0; tentativa < 200; tentativa++) {
+      r.x = uniforme(R, w.W - R);
+      r.y = uniforme(R, w.H - R);
+      if (w.livre(r.x, r.y)) {
+        r.th = uniforme(0, 2 * PI_);
+        return w;
+      }
+    }
+  }
 }
 
 // uma leitura do HC-SR04 simulado
@@ -94,7 +99,7 @@ static float medir(const Mundo& w, const Robo& r) {
 }
 
 struct Contagem {
-  int quase = 0, freios = 0, batidas = 0, passos = 0;
+  int quase = 0, freios = 0, batidas = 0, passos = 0, muito_perto = 0;
   float andou = 0, recompensa = 0;
   std::set<std::pair<int, int>> celulas;  // células de 20 cm que o robô visitou
 };
@@ -113,8 +118,11 @@ static void mover(const Mundo& w, Robo& r, float v, float giro, float tempo, Con
   c.celulas.insert({(int)(r.x / 20), (int)(r.y / 20)});
 }
 
+static float g_v = 0;  // velocidade da última ação para frente (para o carrinho continuar andando um pouco depois de frear)
+
 static void executar(const Mundo& w, Robo& r, Acao a, float tempo, Contagem& c) {
   const float GIRO = 110 * PI_ / 180;
+  g_v = (a == FRENTE) ? 42 : (a == FRENTE_LENTO ? 26 : 0);
   switch (a) {
     case FRENTE: mover(w, r, 42 * (1 + normal(0.1f)), 0, tempo, c); break;
     case FRENTE_LENTO: mover(w, r, 26 * (1 + normal(0.1f)), 0, tempo, c); break;
@@ -125,6 +133,11 @@ static void executar(const Mundo& w, Robo& r, Acao a, float tempo, Contagem& c) 
   }
 }
 
+// o carrinho não para na hora: continua andando uns 0,07 s (o tempo de parar os motores e de o sensor medir de novo)
+static void deslizar(const Mundo& w, Robo& r, Contagem& c) {
+  if (g_v > 0) mover(w, r, g_v * (1 + normal(0.15f)), 0, 0.07f, c);
+  g_v = 0;
+}
 static void freio(const Mundo& w, Robo& r, Contagem& c) { executar(w, r, RE, 0.25f, c); }
 static void fuga(const Mundo& w, Robo& r, int lado, Contagem& c) {
   executar(w, r, RE, 0.5f, c);
@@ -134,8 +147,9 @@ static void fuga(const Mundo& w, Robo& r, int lado, Contagem& c) {
 // o que conta como erro: a distância VERDADEIRA ficar dentro da zona de perigo
 static void contar(const Mundo& w, const Robo& r, Contagem& c) {
   float t = distancia_real(w, r);
-  if (t < TREINO_DIST_PERIGO_CM) c.quase++;
-  if (t < TREINO_DIST_FREIO_CM) c.freios++;
+  if (t < 30) c.quase++;           // as métricas usam distâncias fixas (as do agente mudam com o aprendizado)
+  if (t < 20) c.freios++;
+  if (t < 8) c.muito_perto++;      // perto demais: quase encostando
   c.passos++;
 }
 
@@ -149,6 +163,7 @@ struct Politica {
 // o freio de segurança é o mesmo para todas as políticas
 static bool freio_de_seguranca(const Mundo& w, Robo& r, float d, Contagem& c) {
   if (d < TREINO_DIST_FREIO_CM) {
+    deslizar(w, r, c);
     freio(w, r, c);
     return true;
   }
@@ -207,19 +222,23 @@ struct Aprendiz : Politica {
   void nova_sala() override { ag.recomecar(); filtro.esquecer(); }
   void passo(const Mundo& w, Robo& r, float d, Contagem& c) override {
     d = filtro.filtrar(d, 2 * DIST_MINIMA_CM, DIST_MINIMA_CM - 1);
-    int antes = ag.m.blocos;
-    Decisao x = ag.decidir(d, explorar, aprender);
-    (void)antes;
-    if (x.escapar) { fuga(w, r, x.lado, c); filtro.esquecer(); return; }
-    if (x.freio) { freio(w, r, c); filtro.esquecer(); return; }
+    Decisao x = ag.decidir(d, explorar, aprender, false);
+    if (x.escapar) { g_v = 0; fuga(w, r, x.lado, c); filtro.esquecer(); return; }
+    if (x.freio) {
+      deslizar(w, r, c);                // o carrinho ainda anda um pouco depois de decidir parar
+      ag.freou(medir(w, r), aprender);  // mede quanto espaço sobrou e ajusta a distância do freio
+      freio(w, r, c);
+      filtro.esquecer();
+      return;
+    }
     executar(w, r, x.acao, DT, c);
   }
 };
 
 // roda uma sala de `passos` ciclos
-static Contagem sala(Politica& p, int passos) {
+static Contagem sala(Politica& p, int passos, bool apertada = false) {
   Robo r;
-  Mundo w = sala_aleatoria(r);
+  Mundo w = sala_aleatoria(r, apertada);
   p.nova_sala();
   Contagem c;
   for (int i = 0; i < passos; i++) {
@@ -230,7 +249,7 @@ static Contagem sala(Politica& p, int passos) {
 }
 
 static void imprimir(const char* tipo, const std::string& nome, int idx, const Contagem& c, float eps = 0) {
-  printf("%s,%s,%d,%d,%d,%d,%.1f,%zu,%.4f\n", tipo, nome.c_str(), idx, c.quase, c.freios, c.batidas, c.andou, c.celulas.size(), eps);
+  printf("%s,%s,%d,%d,%d,%d,%.1f,%zu,%d,%.4f\n", tipo, nome.c_str(), idx, c.quase, c.freios, c.batidas, c.andou, c.celulas.size(), c.muito_perto, eps);
 }
 
 int main(int argc, char** argv) {
@@ -240,29 +259,40 @@ int main(int argc, char** argv) {
   const int POR_SALA = 600;
 
   // 1) curva de aprendizado: treina de 2 jeitos (do zero e partindo da regra antiga) em salas sempre novas
-  Aprendiz frio(true, true), quente(true, true);
+  Aprendiz frio(true, true), quente(true, true), fixo(true, true);
   frio.ag.zerar(false);
   quente.ag.zerar(true);
+  fixo.ag.zerar(true);
+  fixo.ag.adaptar_margem = false;  // mesmo treino, mas o freio fica sempre a 20 cm
   frio.ag.semear(11 + semente);
   quente.ag.semear(22 + semente);
+  fixo.ag.semear(33 + semente);
   for (int i = 0; i < passos_treino / POR_SALA; i++) {
-    imprimir("treino", "do_zero", i, sala(frio, POR_SALA), frio.ag.epsilon());
-    imprimir("treino", "com_palpite_inicial", i, sala(quente, POR_SALA), quente.ag.epsilon());
+    imprimir("treino", "do_zero", i, sala(frio, POR_SALA, uniforme(0, 1) < 0.35f), frio.ag.epsilon());
+    imprimir("treino", "com_palpite_inicial", i, sala(quente, POR_SALA, uniforme(0, 1) < 0.35f), quente.ag.epsilon());
+    imprimir("treino", "margem_fixa", i, sala(fixo, POR_SALA, uniforme(0, 1) < 0.35f), fixo.ag.epsilon());
   }
+
+  printf("margem,do_zero,%.1f,%.1f\n", frio.ag.m.freio_cm[0], frio.ag.m.freio_cm[1]);
+  printf("margem,com_palpite_inicial,%.1f,%.1f\n", quente.ag.m.freio_cm[0], quente.ag.m.freio_cm[1]);
+  printf("margem,margem_fixa,%.1f,%.1f\n", fixo.ag.m.freio_cm[0], fixo.ag.m.freio_cm[1]);
 
   // 2) avaliação em salas que ele nunca viu (sem explorar e sem aprender), contra as outras políticas
   Aleatoria aleatoria;
   Regras regras(false), regras_novas(true);
-  Aprendiz a_frio(false, false), a_quente(false, false), nada(false, false);
+  Aprendiz a_frio(false, false), a_quente(false, false), a_fixo(false, false), nada(false, false);
   a_frio.ag = frio.ag;
   a_quente.ag = quente.ag;
+  a_fixo.ag = fixo.ag;
   nada.ag.zerar(false);  // agente sem treino nenhum, só a tabela zerada
   struct { const char* nome; Politica* p; } todos[] = {
       {"aleatoria", &aleatoria}, {"regras_antigas", &regras}, {"regras_com_detector", &regras_novas}, {"agente_sem_treino", &nada},
-      {"agente_do_zero", &a_frio}, {"agente_com_palpite", &a_quente}};
+      {"agente_do_zero", &a_frio}, {"agente_margem_fixa", &a_fixo}, {"agente_com_palpite", &a_quente}};
   for (auto& t : todos) {
     gen.seed(1000);  // as mesmas salas para todos
     for (int i = 0; i < 100; i++) imprimir("avaliacao", t.nome, i, sala(*t.p, POR_SALA));
+    gen.seed(2000);
+    for (int i = 0; i < 100; i++) imprimir("apertada", t.nome, i, sala(*t.p, POR_SALA, true));
   }
   return 0;
 }
