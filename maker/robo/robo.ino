@@ -69,8 +69,8 @@
 // --- Distâncias (cm) ---
 #define PROTECAO_FRENTE 1   // 1 = não anda para frente com obstáculo perto; 0 = desliga (se o sensor estiver dando leitura errada)
 #define DIST_PARAR_CM 12    // a menos disso não anda para frente (manual e autônomo)
-#define DIST_DESVIO_CM 22   // autônomo: começa a girar a esta distância
-#define DIST_LIVRE_CM 28    // autônomo: volta a andar quando houver pelo menos isto livre
+#define DIST_DESVIO_CM 18   // autônomo: começa a girar a esta distância
+#define DIST_LIVRE_CM 20    // autônomo: volta a andar quando houver pelo menos isto livre
 
 // --- LDR (leitura de 0 a 4095; olhe o valor "ldr=" no Monitor Serial) ---
 #define LDR_ESCURO 300   // valor com o LDR coberto com o dedo (luz = 0%)
