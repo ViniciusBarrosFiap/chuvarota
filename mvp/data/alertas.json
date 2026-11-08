@@ -1,35 +1,35 @@
 {
-  "atualizado_em": "2026-11-08T12:58:03.909037+00:00",
+  "atualizado_em": "2026-11-08T19:26:08.034204+00:00",
   "alertas": [
     {
       "id": "se",
       "regiao": "Sé",
-      "mm_3h": 4.1,
+      "mm_3h": 2.8,
       "risco": "baixo"
     },
     {
       "id": "pinheiros",
       "regiao": "Pinheiros",
-      "mm_3h": 5.1,
-      "risco": "medio"
+      "mm_3h": 3.6,
+      "risco": "baixo"
     },
     {
       "id": "mooca",
       "regiao": "Mooca",
-      "mm_3h": 4.1,
+      "mm_3h": 2.8,
       "risco": "baixo"
     },
     {
       "id": "santo-amaro",
       "regiao": "Santo Amaro",
-      "mm_3h": 5.3,
-      "risco": "medio"
+      "mm_3h": 4.3,
+      "risco": "baixo"
     },
     {
       "id": "tatuape",
       "regiao": "Tatuapé",
-      "mm_3h": 5.3,
-      "risco": "medio"
+      "mm_3h": 3.3,
+      "risco": "baixo"
     }
   ]
 }
