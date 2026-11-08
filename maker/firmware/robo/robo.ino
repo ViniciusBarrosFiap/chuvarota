@@ -49,6 +49,11 @@ RampaMotor rampa;          // aceleração suave dos motores
 Navegador navegador;       // modo autônomo: velocidade pela distância e curvas antes da parede
 DetectorTravado detector;  // modo autônomo: mandou andar e a distância não mudou = preso raspando em uma parede
 Agente agente;             // aprendizado por reforço (modos treino e IA): a tabela fica na memória flash
+MetaTreino meta;           // meta do treino, definida pelo painel (cfg meta_passos / meta_minutos)
+unsigned long treino_inicio_ms = 0;  // quando esta sessão de treino começou
+bool painel = false;       // true = imprime uma linha de telemetria por ciclo para o painel (comando "painel 1")
+int acao_atual = -1;       // última ação do agente: 0 a 4; 5 = freio de segurança; 6 = fuga; -1 = nenhuma (manual ou autônomo)
+bool explorando_atual = false;
 int rotulo_coleta = 0;     // MODO_COLETA: classe digitada no Monitor Serial (0 a 5)
 
 // janela das últimas leituras (a mais antiga primeiro)
@@ -181,6 +186,8 @@ void imprimir_bloco() {
 void passo_ia(float d, bool escuro, bool treinando) {
   Decisao x = agente.decidir(d, treinando, treinando, escuro);
   digitalWrite(LED, x.explorou);  // acende nos ciclos em que ele testa uma ação aleatória (explorando)
+  acao_atual = x.escapar ? 6 : (x.freio ? 5 : (int)x.acao);
+  explorando_atual = x.explorou;
   if (x.escapar) {  // preso: ré maior e giro para o lado
     Serial.println("preso: fuga");
     fuga(x.lado);
@@ -219,8 +226,18 @@ void trocar_modo(int novo) {
   detector.esquecer();
   navegador.esquecer();
   agente.recomecar();
+  acao_atual = -1;
+  explorando_atual = false;
+  if (novo == TREINO) treino_inicio_ms = millis();
   apitar(novo + 1);
   Serial.printf("modo: %s\n", NOMES_MODO[novo]);
+}
+
+// A meta do treino foi atingida? (total de passos ou tempo desta sessão, o que vier primeiro)
+bool meta_atingida() {
+  if (meta.passos > 0 && agente.m.passos >= meta.passos) return true;
+  if (meta.minutos > 0 && (millis() - treino_inicio_ms) / 60000.0f >= meta.minutos) return true;
+  return false;
 }
 
 // o que ele aprendeu: a melhor ação para cada situação (depois de uma ação de andar)
@@ -239,6 +256,19 @@ void imprimir_politica() {
       Serial.printf("  %-18s %-12s -> %s\n", faixa, TENDENCIAS[t], nome_acao(agente.melhor_acao(s)));
     }
   }
+  // as mesmas informações, em linhas para o painel: POL,faixa,tendência,ação (0 seguir, 1 curva esq, 2 curva dir, 3 girar esq, 4 girar dir)
+  for (int f = 0; f < N_FAIXAS; f++)
+    for (int t = 0; t < N_TENDENCIAS; t++) Serial.printf("POL,%d,%d,%d\n", f, t, (int)agente.melhor_acao((f * N_TENDENCIAS + t) * N_GIROS));
+  Serial.printf("POL_FREIO,%.0f,%.0f\n", agente.m.freio_cm[0], agente.m.freio_cm[1]);
+}
+
+// ---- painel: configuração e estado em linhas "CFG nome=valor" -------------------------------------------------------------------
+void descrever_config() {
+  Serial.printf("CFG eps_inicial=%.3f\nCFG eps_minimo=%.3f\nCFG eps_tau=%.0f\nCFG ciclos_por_acao=%d\nCFG margem_min=%.0f\n", agente.eps_inicial, agente.eps_minimo,
+                agente.eps_tau, agente.ciclos_por_acao, agente.margem_min);
+  Serial.printf("CFG adaptar_margem=%d\nCFG palpite=%d\nCFG meta_passos=%u\nCFG meta_minutos=%.0f\n", agente.adaptar_margem, agente.palpite, (unsigned)meta.passos, meta.minutos);
+  Serial.printf("ESTADO modo=%d passos=%u eps=%.3f margem=%.0f margem_lento=%.0f painel=%d\n", modo, (unsigned)agente.m.passos, agente.epsilon(), agente.m.freio_cm[0],
+                agente.m.freio_cm[1], painel);
 }
 
 // a curva de aprendizado, em CSV (copie do Monitor Serial): o treino melhora se as quase-batidas e os freios caem
@@ -457,51 +487,106 @@ void teste_giro() {
 }
 
 void ajuda() {
-  Serial.println("comandos: a treino | u IA | q política aprendida | e curva de aprendizado | z apaga o aprendizado | i/r calibração do LDR");
+  Serial.println("comandos: a treino | u IA | x modo manual | q política aprendida | e curva de aprendizado | z apaga o aprendizado | i/r calibração do LDR");
   Serial.println("          p precisão do sensor | k calibrar o sensor | v medir a velocidade | g medir o giro (estes 4 só no modo manual)");
+  Serial.println("painel:   painel 1 (telemetria) | modo manual/autonomo/treino/ia | cfg? (mostra os ajustes) | cfg nome valor");
+  Serial.println("          nomes: eps_inicial eps_minimo eps_tau ciclos_por_acao margem_min adaptar_margem palpite meta_passos meta_minutos");
 }
 
+// um comando de uma letra (os de sempre)
+void executar_comando(char c) {
+  if (c == 'r') {  // apaga a calibração do LDR
+    ldr_min = LDR_ESCURO;
+    ldr_max = LDR_CLARO;
+    calibracao_mudou = true;
+    salvar_calibracao();
+    Serial.println("calibração do LDR apagada");
+  } else if (c == 'i') {
+    Serial.printf("LDR: mais escuro visto %.0f, mais claro visto %.0f\n", ldr_min, ldr_max);
+  } else if (c == 'a') {  // liga e desliga o modo treino (sem precisar do Dabble)
+    trocar_modo(modo == TREINO ? MANUAL : TREINO);
+  } else if (c == 'u') {  // liga e desliga o modo IA
+    trocar_modo(modo == IA ? MANUAL : IA);
+  } else if (c == 'x') {  // volta ao modo manual (o carrinho para)
+    trocar_modo(MANUAL);
+  } else if (c == 'q') {
+    imprimir_politica();
+  } else if (c == 'e') {
+    imprimir_historico();
+  } else if (c == 'z') {  // apaga o que ele aprendeu (use ao levar o carrinho para um ambiente novo)
+    agente.zerar(agente.palpite);
+    salvar_agente();
+    Serial.println("aprendizado apagado");
+  } else if (c == 'p' || c == 'k' || c == 'v' || c == 'g') {  // calibrações: bloqueiam o robô por alguns segundos
+    if (modo != MANUAL) {
+      Serial.println("estes comandos só funcionam no modo manual (aperte X no Dabble)");
+    } else if (c == 'p') {
+      teste_precisao();
+    } else if (c == 'k') {
+      calibrar_sensor();
+    } else if (c == 'v') {
+      teste_velocidade();
+    } else {
+      teste_giro();
+    }
+  } else if (c == '?') {
+    ajuda();
+  }
+#if MODO_COLETA
+  if (c >= '0' && c <= '5') rotulo_coleta = c - '0';
+#endif
+}
+
+// uma linha completa: uma letra (comando de sempre) ou um comando do painel (cfg, modo, painel)
+void executar_linha(const char* linha) {
+  LinhaSerial l = interpretar_linha(linha);
+  switch (l.tipo) {
+    case LinhaSerial::VAZIA: break;
+    case LinhaSerial::LETRA: executar_comando(l.letra); break;
+    case LinhaSerial::CFG_LISTA: descrever_config(); break;
+    case LinhaSerial::CFG: {
+      const char* erro;
+      if (aplicar_config(agente, meta, l.nome, l.valor, &erro)) Serial.printf("CFG %s=%g\n", l.nome, l.valor);
+      else Serial.printf("CFG erro: %s (%s)\n", l.nome, erro);
+      break;
+    }
+    case LinhaSerial::MODO:
+      if (!strcmp(l.nome, "manual")) trocar_modo(MANUAL);
+      else if (!strcmp(l.nome, "autonomo")) trocar_modo(AUTONOMO);
+      else if (!strcmp(l.nome, "treino")) trocar_modo(TREINO);
+      else if (!strcmp(l.nome, "ia")) trocar_modo(IA);
+      else Serial.printf("modo desconhecido: %s\n", l.nome);
+      break;
+    case LinhaSerial::PAINEL:
+      painel = l.valor > 0.5f;
+      Serial.printf("painel: telemetria %s\n", painel ? "ligada" : "desligada");
+      break;
+    default: Serial.printf("comando desconhecido: %s (envie ? para a lista)\n", linha);
+  }
+}
+
+// lê o que chegou pela porta serial: linhas terminadas em Enter ou, para os comandos de uma letra, a letra sozinha (sem Enter)
 void comandos_serial() {
+  static char linha[48];
+  static int n = 0;
+  static unsigned long ultimo = 0;
   while (Serial.available()) {
     char c = Serial.read();
-    if (c == 'r') {  // apaga a calibração do LDR
-      ldr_min = LDR_ESCURO;
-      ldr_max = LDR_CLARO;
-      calibracao_mudou = true;
-      salvar_calibracao();
-      Serial.println("calibração do LDR apagada");
-    } else if (c == 'i') {
-      Serial.printf("LDR: mais escuro visto %.0f, mais claro visto %.0f\n", ldr_min, ldr_max);
-    } else if (c == 'a') {  // liga e desliga o modo treino (sem precisar do Dabble)
-      trocar_modo(modo == TREINO ? MANUAL : TREINO);
-    } else if (c == 'u') {  // liga e desliga o modo IA
-      trocar_modo(modo == IA ? MANUAL : IA);
-    } else if (c == 'q') {
-      imprimir_politica();
-    } else if (c == 'e') {
-      imprimir_historico();
-    } else if (c == 'z') {  // apaga o que ele aprendeu (use ao levar o carrinho para um ambiente novo)
-      agente.zerar();
-      salvar_agente();
-      Serial.println("aprendizado apagado");
-    } else if (c == 'p' || c == 'k' || c == 'v' || c == 'g') {  // calibrações: bloqueiam o robô por alguns segundos
-      if (modo != MANUAL) {
-        Serial.println("estes comandos só funcionam no modo manual (aperte X no Dabble)");
-      } else if (c == 'p') {
-        teste_precisao();
-      } else if (c == 'k') {
-        calibrar_sensor();
-      } else if (c == 'v') {
-        teste_velocidade();
-      } else {
-        teste_giro();
+    ultimo = millis();
+    if (c == '\n' || c == '\r') {
+      if (n) {
+        linha[n] = 0;
+        n = 0;
+        executar_linha(linha);
       }
-    } else if (c == '?') {
-      ajuda();
+      continue;
     }
-#if MODO_COLETA
-    if (c >= '0' && c <= '5') rotulo_coleta = c - '0';
-#endif
+    if (n < (int)sizeof(linha) - 1) linha[n++] = c;
+  }
+  if (n == 1 && millis() - ultimo > 40) {  // uma letra sem Enter (Monitor Serial com "No Line Ending")
+    linha[1] = 0;
+    n = 0;
+    executar_linha(linha);
   }
 }
 
@@ -596,6 +681,9 @@ void loop() {
   atual.dist = d;
   atual.classe = c;
   digitalWrite(LED, c == 1 || c == 3 || c == 4);
+  // telemetria para o painel: tempo, distância, luz, classe, modo, ação, explorando, freio, passos de treino, exploração
+  if (painel) Serial.printf("~%lu,%.1f,%.0f,%d,%d,%d,%d,%.0f,%u,%.3f\n", millis(), d, l * 100, c, modo, acao_atual, explorando_atual ? 1 : 0, agente.m.freio_cm[0],
+                            (unsigned)agente.m.passos, agente.epsilon());
 
   if (modo != AUTONOMO) {  // manual, treino ou IA: o robô observa e avisa (e, no treino e na IA, o agente dirige)
     if (c == 3 && millis() - ultimo_alerta > 10000) {
@@ -606,6 +694,13 @@ void loop() {
     if (c == 4 && millis() - ultima_luz_piscando > 30000) {
       ultima_luz_piscando = millis();
       urgente = true;
+    }
+    if (modo == TREINO && meta_atingida()) {  // meta do painel (passos ou minutos): salva, avisa e para
+      Serial.printf("meta: treino concluído (%u passos, %.1f min)\n", (unsigned)agente.m.passos, (millis() - treino_inicio_ms) / 60000.0f);
+      salvar_agente();
+      apitar(5);
+      trocar_modo(MANUAL);
+      return;
     }
     if (modo == TREINO || modo == IA) passo_ia(d, c == 1 || c == 3, modo == TREINO);
     return;

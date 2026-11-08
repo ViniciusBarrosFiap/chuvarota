@@ -13,6 +13,9 @@ Carro robô com ESP32 **controlado pelo app Dabble** (Bluetooth), que também **
 4. **Calibrar** (uma vez, com o USB e o Monitor Serial em 115200, modo manual): `p` mede a precisão do sensor, `k` o calibra com régua, `v` mede a velocidade e `g` o giro. Cada um diz o que fazer e imprime o que colar no `config.h` ([docs/teste_pecas.md](docs/teste_pecas.md), seção 4b).
 5. **Usar:** abra o **Dabble** no celular, conecte em **ChuvaRota** e dirija. O carrinho não precisa ficar ligado ao computador: só para gravar e para ver mensagens. **Atenção:** com o Dabble ligado o envio ao MVP fica desligado (não sobra memória para o HTTPS); para o MVP receber as leituras, use `USAR_DABBLE 0` no `config.h` (o robô então só anda sozinho).
 
+## Painel (gráficos em tempo real)
+Abra `maker/painel/index.html` no **Chrome ou Edge** e conecte o carrinho pelo USB: o painel mostra o treino acontecendo (distância ao vivo, ação, curva de aprendizado, o que ele aprendeu), deixa você **configurar o treino** e **estima o tempo** que falta. Dá para ver uma demonstração sem o carrinho. Passo a passo em [docs/painel.md](docs/painel.md).
+
 ## Modos (botões do Dabble)
 | Botão | Modo | O que faz |
 |---|---|---|
@@ -26,7 +29,7 @@ Carro robô com ESP32 **controlado pelo app Dabble** (Bluetooth), que também **
 O aprendizado do treino fica salvo na memória do ESP32. Botões e ajustes em [docs/dabble.md](docs/dabble.md).
 
 ## Comandos no Monitor Serial (115200)
-`?` lista tudo. Resumo: `a` liga/desliga o treino, `u` a IA, `q` mostra o que aprendeu, `e` a curva de aprendizado (CSV), `z` apaga o aprendizado (use ao mudar de ambiente), `p` `k` `v` `g` calibração, `i` `r` calibração do LDR.
+`?` lista tudo. Resumo: `a` liga/desliga o treino, `u` a IA, `x` volta ao manual, `q` mostra o que aprendeu, `e` a curva de aprendizado (CSV), `z` apaga o aprendizado (use ao mudar de ambiente), `p` `k` `v` `g` calibração, `i` `r` calibração do LDR.
 
 ## Problema (CitizenTech)
 Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chuva e à noite, aumentam o risco de acidentes e de crimes, e a prefeitura só descobre quando alguém reclama. O robô percorre o local, mede a luz e a distância até os obstáculos e avisa onde precisa de atenção, inclusive lâmpadas com defeito. Contribui para os ODS 11 (cidades sustentáveis) e 9 (infraestrutura).
@@ -78,7 +81,8 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 - `firmware/teste_pecas/`: sketch para testar cada peça sozinha. `firmware/configurar.sh` e `firmware/gravar.sh`
 - `tinyml/`: treino do modelo, simulações e testes
 - `simulador/`: finge ser o robô para testar o endpoint do MVP
-- `docs/`: montagem, Dabble, testes de bancada e calibração, e como a IA funciona ([ia.md](docs/ia.md))
+- `painel/`: o painel gráfico do treino em tempo real (`index.html`) e a demonstração
+- `docs/`: montagem, Dabble, testes de bancada e calibração, como a IA funciona ([ia.md](docs/ia.md)) e o painel ([painel.md](docs/painel.md))
 
 ## Testes (no computador)
 - **`python maker/tinyml/testar_tudo.py`**: roda tudo de uma vez (TinyML em C++, setas do Dabble, filtro e detector, sensor e calibração, regras do Q-learning e a simulação do treino).

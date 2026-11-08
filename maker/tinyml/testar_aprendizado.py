@@ -99,6 +99,32 @@ int main() {
   fixo.decidir(15, false, false);
   fixo.freou(30, true);
   SAIDA("freio_fixo", fixo.m.freio_cm[0]);
+  // ajustes vindos do painel
+  Agente k;
+  MetaTreino meta;
+  const char* erro;
+  SAIDA("cfg_ok", aplicar_config(k, meta, "eps_tau", 2000, &erro));
+  SAIDA("cfg_eps_tau", k.eps_tau);
+  SAIDA("cfg_fora_da_faixa", aplicar_config(k, meta, "eps_tau", 5, &erro));
+  SAIDA("cfg_fora_da_faixa_mudou", k.eps_tau);
+  SAIDA("cfg_nome_ruim", aplicar_config(k, meta, "xyz", 1, &erro));
+  SAIDA("cfg_erro_nome", !strcmp(erro, "nome desconhecido"));
+  aplicar_config(k, meta, "eps_inicial", 0.1f, &erro);
+  SAIDA("cfg_eps_inicial", k.epsilon());
+  aplicar_config(k, meta, "meta_passos", 5000, &erro);
+  aplicar_config(k, meta, "meta_minutos", 30, &erro);
+  SAIDA("cfg_meta_passos", meta.passos); SAIDA("cfg_meta_minutos", meta.minutos);
+  aplicar_config(k, meta, "ciclos_por_acao", 4, &erro);
+  k.zerar(false);
+  for (int i = 0; i < 4; i++) k.decidir(150 - 6 * i, false, true);
+  SAIDA("cfg_passos_em_4_ciclos", k.m.passos);   // a ação ainda não terminou: nenhum passo contado
+  k.decidir(100, false, true);
+  SAIDA("cfg_passos_no_5o_ciclo", k.m.passos);   // terminou: um passo
+  aplicar_config(k, meta, "margem_min", 18, &erro);
+  k.decidir(150, false, false); k.decidir(15, false, false);
+  for (int i = 0; i < 100; i++) k.freou(30, true);
+  SAIDA("cfg_margem_min_respeitada", k.m.freio_cm[0]);
+  SAIDA("epsilon_em_zero", Agente().epsilon_em(0)); SAIDA("epsilon_em_infinito", Agente().epsilon_em(1e6f));
   // tamanho do que vai para a memória flash
   SAIDA("bytes_memoria", sizeof(Memoria));
   // com o palpite inicial: longe segue, perto gira, preso gira
@@ -151,6 +177,12 @@ confere("freio adaptativo: sem permissão (modo IA) ele não diminui", v["freio_
 confere("freio adaptativo: parou perto demais = +2, perdeu o eco = +3", v["freio_apos_parar_perto"] == 21 and v["freio_apos_perder_eco"] == 24)
 confere("freio adaptativo: respeita o mínimo do config.h e o máximo de 30", v["freio_minimo"] == v["margem_min_config"] and v["freio_maximo"] == 30)
 confere("freio fixo (adaptar_margem desligado) não muda", v["freio_fixo"] == 20)
+confere("ajuste do painel: valor dentro da faixa vale e fora da faixa é recusado sem mudar nada", v["cfg_ok"] == 1 and v["cfg_eps_tau"] == 2000 and v["cfg_fora_da_faixa"] == 0 and v["cfg_fora_da_faixa_mudou"] == 2000)
+confere("ajuste do painel: nome desconhecido é recusado com o motivo", v["cfg_nome_ruim"] == 0 and v["cfg_erro_nome"] == 1)
+confere("ajuste do painel: a exploração inicial e as metas mudam", abs(v["cfg_eps_inicial"] - 0.1) < 1e-4 and v["cfg_meta_passos"] == 5000 and v["cfg_meta_minutos"] == 30)
+confere("ajuste do painel: a ação dura o número de ciclos configurado", v["cfg_passos_em_4_ciclos"] == 0 and v["cfg_passos_no_5o_ciclo"] == 1)
+confere("ajuste do painel: o mínimo do freio configurado é respeitado", v["cfg_margem_min_respeitada"] == 18)
+confere("a exploração vai de eps_inicial a eps_minimo", abs(v["epsilon_em_zero"] - 0.30) < 1e-4 and abs(v["epsilon_em_infinito"] - 0.05) < 1e-4)
 confere("o que vai para a memória flash cabe com folga (limite de 4000 bytes por valor)", v["bytes_memoria"] < 4000, f"({v['bytes_memoria']:.0f} bytes)")
 confere("palpite inicial: longe segue, perto gira, preso gira", v["palpite_longe"] == 0 and v["palpite_perto"] in (3, 4) and v["palpite_travado"] in (3, 4))
 assert erros == 0, f"{erros} verificação(ões) do aprendizado falharam"

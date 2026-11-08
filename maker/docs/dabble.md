@@ -29,7 +29,7 @@ O Dabble é um app gratuito (Android e iOS) que transforma o celular em um contr
 - No modo **autônomo** o robô decide sozinho (anda, desvia, freia diante de algo que se aproxima) até você apertar o X ou o triângulo.
 
 ## Comandos no Monitor Serial (115200)
-`a` liga e desliga o treino, `u` liga e desliga a IA, `q` mostra o que ele aprendeu, `e` imprime a curva de aprendizado (CSV), `z` apaga o aprendizado, `i` mostra a calibração do LDR e `r` a apaga. Mais detalhes no [README](../README.md).
+`a` liga e desliga o treino, `u` liga e desliga a IA, `x` volta ao manual, `painel 1` liga a telemetria do [painel gráfico](painel.md), `cfg?` e `cfg nome valor` mostram e mudam os ajustes do treino, `q` mostra o que ele aprendeu, `e` imprime a curva de aprendizado (CSV), `z` apaga o aprendizado, `i` mostra a calibração do LDR e `r` a apaga. Mais detalhes no [README](../README.md).
 
 ## Ajustes no `config.h`
 - `MODO_INICIAL`: `0` começa dirigido pelo Dabble, `1` autônomo, `2` treino, `3` IA.

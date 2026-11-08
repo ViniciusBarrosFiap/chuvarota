@@ -5,6 +5,7 @@
 // defeitos do HC-SR04 (ruído, falha de eco, leitura falsa, mediana de 3). Os movimentos têm erro, porque o carrinho de verdade
 // não tem nada que meça o quanto andou ou girou.
 #include <stdio.h>
+#include <string.h>
 
 #include <algorithm>
 #include <cmath>
@@ -270,16 +271,25 @@ struct Aprendiz : Politica {
   Agente ag;
   FiltroDistancia filtro;
   bool explorar, aprender;
+  // o que aconteceu no último ciclo (a telemetria do modo --demo imprime isto)
+  int ult_acao = -1;  // 0 a 4 = ação; 5 = freio de segurança; 6 = fuga
+  bool ult_exp = false, ev_freio_mudou = false, ev_fuga = false;
+  float ult_d = 200, ult_folga = 0, margem_antes = 0, margem_depois = 0;
   Aprendiz(bool explorar_, bool aprender_) : explorar(explorar_), aprender(aprender_) {}
   void nova_sala() override { Politica::nova_sala(); ag.recomecar(); filtro.esquecer(); }
   void passo(const Mundo& w, Robo& r, float d, Contagem& c) override {
     d = filtro.filtrar(d, 2 * DIST_MINIMA_CM, DIST_MINIMA_CM - 1);
     Decisao x = ag.decidir(d, explorar, aprender, false);
-    if (x.escapar) { rampa.parar(); fuga(w, r, x.lado, c); filtro.esquecer(); return; }
+    ult_d = d;
+    ult_exp = x.explorou;
+    ult_acao = x.escapar ? 6 : (x.freio ? 5 : (int)x.acao);
+    if (x.escapar) { ev_fuga = true; rampa.parar(); fuga(w, r, x.lado, c); filtro.esquecer(); return; }
     if (x.freio) {
       rampa.parar();
       parar_e_esperar(w, r, c);          // o carrinho ainda anda um pouco depois de decidir parar
-      ag.freou(medir(w, r), aprender);   // mede quanto espaço sobrou e ajusta a distância do freio
+      ult_folga = medir(w, r);
+      ag.freou(ult_folga, aprender);     // mede quanto espaço sobrou e ajusta a distância do freio
+      if (ag.margem_depois != ag.margem_antes) { ev_freio_mudou = true; margem_antes = ag.margem_antes; margem_depois = ag.margem_depois; }
       re_curta(w, r, c);
       filtro.esquecer();
       return;
@@ -307,7 +317,55 @@ static void imprimir(const char* tipo, const std::string& nome, int idx, const C
          c.muito_perto, 100 * c.t_preso / t, 100 * c.t_giro / t, 100 * c.t_re / t, c.trocas / min, c.abruptos / min, eps);
 }
 
+// ---- --demo: um treino com a mesma saída que o robô manda pela porta serial (telemetria do painel) ----------------------------------
+static void imprimir_politica(const Agente& ag) {
+  for (int f = 0; f < N_FAIXAS; f++)
+    for (int t = 0; t < N_TENDENCIAS; t++) printf("POL,%d,%d,%d\n", f, t, (int)ag.melhor_acao((f * N_TENDENCIAS + t) * N_GIROS));
+  printf("POL_FREIO,%.0f,%.0f\n", ag.m.freio_cm[0], ag.m.freio_cm[1]);
+}
+
+static int demo(int ciclos, int semente) {
+  gen.seed(semente);
+  Aprendiz ap(true, true);
+  ap.ag.zerar(true);
+  ap.ag.semear(7 + semente);
+  const Agente& ag = ap.ag;
+  printf("aprendizado: 0 passos de treino já feitos (exploração %.0f%%, distância do freio %.0f cm)\n", ag.epsilon() * 100, ag.m.freio_cm[0]);
+  printf("CFG eps_inicial=%.3f\nCFG eps_minimo=%.3f\nCFG eps_tau=%.0f\nCFG ciclos_por_acao=%d\nCFG margem_min=%.0f\n", ag.eps_inicial, ag.eps_minimo, ag.eps_tau, ag.ciclos_por_acao, ag.margem_min);
+  printf("CFG adaptar_margem=%d\nCFG palpite=%d\nCFG meta_passos=%d\nCFG meta_minutos=0\n", ag.adaptar_margem, ag.palpite, ciclos / CICLOS_POR_ACAO);
+  printf("ESTADO modo=%d passos=%u eps=%.3f margem=%.0f margem_lento=%.0f painel=%d\n", 2, (unsigned)ag.m.passos, ag.epsilon(), ag.m.freio_cm[0], ag.m.freio_cm[1], 1);
+  printf("modo: treino (aprendendo por tentativa e erro)\n");
+  Robo r;
+  Mundo w = sala_aleatoria(r, false);
+  ap.nova_sala();
+  Contagem c;
+  double ms = 1000;
+  uint32_t blocos = 0;
+  for (int i = 0; i < ciclos; i++) {
+    if (i > 0 && i % 600 == 0) { w = sala_aleatoria(r, uniforme(0, 1) < 0.35f); ap.nova_sala(); }  // sala nova a cada 600 ciclos
+    contar(w, r, c);
+    float t0 = c.t;
+    ap.passo(w, r, medir(w, r), c);
+    ms += (c.t - t0) * 1000;
+    float luz = std::max(0.0f, std::min(100.0f, 55 + normal(4)));
+    printf("~%.0f,%.1f,%.0f,%d,%d,%d,%d,%.0f,%u,%.3f\n", ms, ap.ult_d, luz, ap.ult_d < DIST_MINIMA_CM ? 2 : 0, 2 /* modo treino */, ap.ult_acao, ap.ult_exp ? 1 : 0,
+           ag.m.freio_cm[0], (unsigned)ag.m.passos, ag.epsilon());
+    if (ap.ev_freio_mudou) { printf("freio: parou a %.0f cm do obstáculo | distância do freio %.0f -> %.0f cm\n", ap.ult_folga, ap.margem_antes, ap.margem_depois); ap.ev_freio_mudou = false; }
+    if (ap.ev_fuga) { printf("preso: fuga\n"); ap.ev_fuga = false; }
+    if (ag.m.blocos != blocos) {
+      blocos = ag.m.blocos;
+      const Bloco& b = ag.m.historico[(blocos - 1) % N_BLOCOS];
+      printf("treino: bloco %u | passos %u | exploração %.0f%% | nota média %.2f | quase-batidas %u | freios %u | distância do freio %u cm\n", blocos, (unsigned)ag.m.passos,
+             ag.epsilon() * 100, b.recompensa_media, b.quase_batidas, b.freios, b.margem_cm);
+      if (blocos % 4 == 1) imprimir_politica(ag);  // como se o usuário tivesse apertado "q"
+    }
+  }
+  imprimir_politica(ag);
+  return 0;
+}
+
 int main(int argc, char** argv) {
+  if (argc > 3 && !strcmp(argv[1], "--demo")) return demo(atoi(argv[2]), atoi(argv[3]));
   int passos_treino = argc > 1 ? atoi(argv[1]) : 60000;
   int semente = argc > 2 ? atoi(argv[2]) : 1;
   gen.seed(semente);

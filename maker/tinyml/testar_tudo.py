@@ -12,6 +12,7 @@ TESTES = [
     ("Filtro da distância e detector de travamento", "testar_seguranca.py"),
     ("Sensor: leituras, calibração e giro", "testar_sensor.py"),
     ("Movimento suave: velocidade pela distância, rampa e navegador", "testar_movimento.py"),
+    ("Protocolo do painel: comandos e formato das linhas", "testar_protocolo.py"),
     ("Q-learning: regras do aprendizado", "testar_aprendizado.py"),
     ("Simulação do treino em salas (leva uns segundos)", "simular_treino.py"),
 ]

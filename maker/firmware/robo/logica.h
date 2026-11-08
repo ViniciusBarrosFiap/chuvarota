@@ -3,6 +3,8 @@
 #pragma once
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 // ================================================================================================================================
 // 1) Dabble -> rodas
@@ -305,3 +307,39 @@ struct Navegador {
   int ticks_giro = 0, claros = 0, ticks_curva = 0;
   float d_curva = 200;
 };
+
+// ================================================================================================================================
+// 5) Protocolo do painel: uma linha vinda da porta serial
+// ================================================================================================================================
+// Uma letra é um comando de sempre ("a", "q", "z"...). O painel manda linhas: "cfg nome valor", "cfg?", "modo treino" e "painel 1".
+struct LinhaSerial {
+  enum Tipo { VAZIA, LETRA, CFG, CFG_LISTA, MODO, PAINEL, DESCONHECIDA } tipo = VAZIA;
+  char letra = 0;
+  char nome[32] = "";
+  float valor = 0;
+};
+
+inline LinhaSerial interpretar_linha(const char* l) {
+  LinhaSerial r;
+  char b[64];
+  while (*l == ' ' || *l == '\t') l++;
+  strncpy(b, l, sizeof(b) - 1);
+  b[sizeof(b) - 1] = 0;
+  int n = (int)strlen(b);
+  while (n > 0 && (b[n - 1] == ' ' || b[n - 1] == '\t' || b[n - 1] == '\r' || b[n - 1] == '\n')) b[--n] = 0;
+  if (n == 0) return r;
+  r.tipo = LinhaSerial::DESCONHECIDA;
+  if (n == 1) {
+    r.tipo = LinhaSerial::LETRA;
+    r.letra = b[0];
+  } else if (!strcmp(b, "cfg?")) {
+    r.tipo = LinhaSerial::CFG_LISTA;
+  } else if (sscanf(b, "cfg %31s %f", r.nome, &r.valor) == 2) {
+    r.tipo = LinhaSerial::CFG;
+  } else if (sscanf(b, "modo %31s", r.nome) == 1) {
+    r.tipo = LinhaSerial::MODO;
+  } else if (sscanf(b, "painel %f", &r.valor) == 1) {
+    r.tipo = LinhaSerial::PAINEL;
+  }
+  return r;
+}

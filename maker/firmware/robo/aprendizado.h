@@ -133,6 +133,11 @@ struct Agente {
   float margem_antes = 0;     // distância do freio antes e depois do último ajuste, para o robô contar o que mudou
   float margem_depois = 0;
   bool adaptar_margem = TREINO_ADAPTAR_MARGEM;  // false = a distância do freio fica fixa
+  // ajustáveis em tempo de execução pelo painel (comando "cfg nome valor"); os valores de partida vêm das constantes acima
+  float eps_inicial = RL_EPS_INICIAL, eps_minimo = RL_EPS_MINIMO, eps_tau = RL_EPS_TAU;
+  int ciclos_por_acao = CICLOS_POR_ACAO;       // quantos ciclos cada ação dura
+  float margem_min = TREINO_MARGEM_MIN_CM;     // o freio nunca chega mais perto que isso
+  bool palpite = RL_PALPITE_INICIAL;           // ao apagar o aprendizado (z), começa com o palpite inicial?
 
   Agente() { zerar(); }
 
@@ -172,7 +177,9 @@ struct Agente {
     detector.esquecer();
   }
 
-  float epsilon() const { return RL_EPS_MINIMO + (RL_EPS_INICIAL - RL_EPS_MINIMO) * expf(-(float)m.passos / RL_EPS_TAU); }
+  float epsilon() const { return epsilon_em(m.passos); }
+  // a exploração depois de n passos de treino (o painel usa para estimar o fim do treino)
+  float epsilon_em(float n) const { return eps_minimo + (eps_inicial - eps_minimo) * expf(-n / eps_tau); }
 
   Acao melhor_acao(int s) const {
     int melhor = 0;
@@ -224,7 +231,7 @@ struct Agente {
     d_ant = d;
     tem_ant = true;
     giro = codigo_giro(x.acao);
-    espera = CICLOS_POR_ACAO - 1;
+    espera = ciclos_por_acao - 1;
 
     if (d < limite) {  // o freio de segurança assume: a ação do agente não vai ser executada
       freio_rapido = rapido_ant_antes_do_freio(limite);
@@ -261,7 +268,7 @@ struct Agente {
     if (d_depois >= 190) lim += 3;                                       // sumiu o eco: ficou perto demais para o sensor
     else if (d_depois < RL_FOLGA_MIN_CM) lim += 2;                       // parou perto demais
     else if (d_depois > RL_FOLGA_MAX_CM && pode_diminuir) lim -= 1;      // sobrou espaço: pode chegar mais perto
-    if (lim < TREINO_MARGEM_MIN_CM) lim = TREINO_MARGEM_MIN_CM;
+    if (lim < margem_min) lim = margem_min;
     if (lim > RL_MARGEM_MAX_CM) lim = RL_MARGEM_MAX_CM;
     margem_depois = lim;
   }
@@ -308,3 +315,29 @@ struct Agente {
     }
   }
 };
+
+// ---- meta e ajustes vindos do painel ----------------------------------------------------------------------------------------
+struct MetaTreino {
+  uint32_t passos = 0;  // para de treinar quando o total de passos de treino chegar aqui (0 = sem meta)
+  float minutos = 0;    // ou quando esta sessão de treino passar deste tempo (0 = sem limite)
+};
+
+// Aplica um ajuste ("cfg nome valor"). Devolve false, com o motivo em *erro, se o nome ou o valor não servem.
+inline bool aplicar_config(Agente& a, MetaTreino& meta, const char* nome, float v, const char** erro) {
+  auto entre = [&](float lo, float hi) {
+    if (v < lo || v > hi) { *erro = "valor fora da faixa"; return false; }
+    return true;
+  };
+  *erro = "";
+  if (!strcmp(nome, "eps_inicial")) { if (!entre(0, 0.6f)) return false; a.eps_inicial = v; }
+  else if (!strcmp(nome, "eps_minimo")) { if (!entre(0, 0.3f)) return false; a.eps_minimo = v; }
+  else if (!strcmp(nome, "eps_tau")) { if (!entre(100, 10000)) return false; a.eps_tau = v; }
+  else if (!strcmp(nome, "ciclos_por_acao")) { if (!entre(1, 6)) return false; a.ciclos_por_acao = (int)(v + 0.5f); }
+  else if (!strcmp(nome, "margem_min")) { if (!entre(10, RL_MARGEM_MAX_CM)) return false; a.margem_min = v; }
+  else if (!strcmp(nome, "adaptar_margem")) { if (!entre(0, 1)) return false; a.adaptar_margem = v > 0.5f; }
+  else if (!strcmp(nome, "palpite")) { if (!entre(0, 1)) return false; a.palpite = v > 0.5f; }
+  else if (!strcmp(nome, "meta_passos")) { if (!entre(0, 100000)) return false; meta.passos = (uint32_t)v; }
+  else if (!strcmp(nome, "meta_minutos")) { if (!entre(0, 600)) return false; meta.minutos = v; }
+  else { *erro = "nome desconhecido"; return false; }
+  return true;
+}
