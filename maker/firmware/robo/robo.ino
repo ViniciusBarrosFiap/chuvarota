@@ -595,8 +595,8 @@ void setup() {
   int saidas[] = {IN1, IN2, IN3, IN4, TRIG, BUZZER, LED};
   for (int p : saidas) pinMode(p, OUTPUT);
   pinMode(ECHO, INPUT);
-  ledcAttach(ENA, 1000, 8);
-  ledcAttach(ENB, 1000, 8);
+  ledcAttach(ENA, PWM_FREQ_HZ, 8);
+  ledcAttach(ENB, PWM_FREQ_HZ, 8);
   analogSetPinAttenuation(LDR, ADC_11db);
   parar();
 
