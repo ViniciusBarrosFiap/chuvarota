@@ -107,6 +107,8 @@ float luz = 1, dist = SEM_ECO_CM;  // última leitura: luz de 0 a 1, distância 
 int ldr_bruto = 0;                 // última leitura crua do LDR (0 a 4095)
 float janela_luz[JANELA], janela_dist[JANELA];  // últimas 8 leituras, a mais antiga primeiro
 int preenchidas = 0;
+int perto_seguidos = 0;  // quantas leituras seguidas abaixo de DIST_DESVIO_CM (autônomo)
+int livre_seguidos = 0;  // quantas leituras seguidas acima de DIST_LIVRE_CM (autônomo)
 
 int classe = CLASSE_OK;         // situação confirmada pela IA
 int candidata = CLASSE_OK;      // situação que o modelo disse agora
@@ -245,6 +247,8 @@ void ler_sensores_e_classificar() {
     janela_luz[i] = janela_luz[i + 1];
     janela_dist[i] = janela_dist[i + 1];
   }
+  perto_seguidos = (dist < DIST_DESVIO_CM) ? perto_seguidos + 1 : 0;
+  livre_seguidos = (dist > DIST_LIVRE_CM) ? livre_seguidos + 1 : 0;
   janela_luz[JANELA - 1] = luz;
   janela_dist[JANELA - 1] = dist;
   if (preenchidas < JANELA) {
@@ -310,11 +314,13 @@ void mudar_fase(Fase nova) {
   fase_inicio = millis();
 }
 
-// anda; ao chegar perto de algo, gira para o lado (alternando) até ter caminho livre; se girar por muito tempo, dá uma ré e tenta de novo
+// anda; ao chegar perto de algo, gira para o lado (alternando) até ter caminho livre; se girar por muito tempo, dá uma ré e tenta de novo.
+// Para não ficar indeciso quando a distância oscila entre DIST_DESVIO_CM e DIST_LIVRE_CM, trocar de fase exige leituras repetidas:
+// 2 seguidas "perto" para começar a girar (a menos que esteja MUITO perto) e 3 seguidas "livre" (e 0,3 s de giro) para voltar a andar.
 void dirigir_autonomo() {
   unsigned long agora = millis();
   if (fase == ANDAR) {
-    if (dist < DIST_DESVIO_CM) {
+    if (perto_seguidos >= 2 || dist < DIST_PARAR_CM) {
       lado_giro = -lado_giro;
       mudar_fase(GIRAR);
       parar();
@@ -326,7 +332,7 @@ void dirigir_autonomo() {
     }
   } else if (fase == GIRAR) {
     girar(lado_giro);
-    if (dist > DIST_LIVRE_CM) mudar_fase(ANDAR);
+    if (livre_seguidos >= 3 && agora - fase_inicio >= 300) mudar_fase(ANDAR);
     else if (agora - fase_inicio > 3000) mudar_fase(RE);  // preso num canto
   } else {  // RE
     andar(-VELOCIDADE_LENTA);
