@@ -59,11 +59,11 @@
 #define USAR_IA 1                   // 1 = a IA reage (farol, devagar, alertas, freio); 0 = carrinho comum, só setas e sensor (para comparar)
 
 // --- Motores: se com a seta para CIMA uma roda gira para trás, troque 0 por 1 no lado dessa roda ---
-#define INVERTE_ESQUERDO 0
-#define INVERTE_DIREITO 0
-#define VELOCIDADE_NORMAL 230  // 0 a 255. Abaixo de uns 140 os motores TT só zumbem e não andam
-#define VELOCIDADE_LENTA 170   // usada com pouca luz (a IA manda andar devagar no escuro)
-#define VELOCIDADE_GIRO 200    // ao girar no lugar
+#define INVERTE_ESQUERDO 1  // no carrinho do Vinicius as duas rodas estavam invertidas (valores do config.h antigo)
+#define INVERTE_DIREITO 1
+#define VELOCIDADE_NORMAL 180  // 0 a 255. Abaixo de uns 140 os motores TT só zumbem e não andam
+#define VELOCIDADE_LENTA 120   // usada com pouca luz (a IA manda andar devagar no escuro)
+#define VELOCIDADE_GIRO 180    // ao girar no lugar
 #define PWM_FREQ_HZ 5000       // frequência do PWM (em 1000 os motores chiam)
 
 // --- Distâncias (cm) ---
