@@ -24,7 +24,7 @@ O Dabble é um app gratuito (Android e iOS) que transforma o celular em um contr
 | **X** | freia e volta para o controle manual |
 
 ## O que o robô faz enquanto você dirige
-- **Proteção:** se houver algo a menos de 25 cm à frente (`DIST_MINIMA_CM` no `config.h`), ele não deixa avançar (você ainda pode recuar e virar). No modo **autônomo** ele também recua e vira para o lado sozinho.
+- **Proteção:** se houver algo a menos de 25 cm à frente (`DIST_MINIMA_CM` no `config.h`), ele não deixa avançar (você ainda pode recuar e virar). No modo **autônomo** ele não chega a esse ponto: começa a curvar a 75 cm. No modo **autônomo** ele também recua e vira para o lado sozinho.
 - **IA e sensores continuam ligados:** o LDR e o modelo TinyML classificam o ambiente e enviam as leituras ao MVP. Se detectar **escuro com obstáculo**, apita uma vez e manda o alerta na hora; se a luz estiver **piscando**, avisa o MVP.
 - No modo **autônomo** o robô decide sozinho (anda, desvia, freia diante de algo que se aproxima) até você apertar o X ou o triângulo.
 

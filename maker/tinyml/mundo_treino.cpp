@@ -56,9 +56,11 @@ struct Mundo {
   }
 };
 
-struct Robo { float x, y, th; };
+struct Robo {
+  float x, y, th;
+  float se = 0, sd = 0;  // velocidade real de cada roda (cm/s): o motor demora a acelerar e a frear
+};
 
-// apertada = sala pequena e cheia de obstáculos, onde uma distância de freio grande atrapalha
 static Mundo sala_aleatoria(Robo& r, bool apertada = false) {
   for (;;) {
     Mundo w;
@@ -71,6 +73,7 @@ static Mundo sala_aleatoria(Robo& r, bool apertada = false) {
       r.y = uniforme(R, w.H - R);
       if (w.livre(r.x, r.y)) {
         r.th = uniforme(0, 2 * PI_);
+        r.se = r.sd = 0;
         return w;
       }
     }
@@ -101,46 +104,66 @@ struct Contagem {
   int quase = 0, freios = 0, batidas = 0, passos = 0, muito_perto = 0;
   float andou = 0, recompensa = 0;
   std::set<std::pair<int, int>> celulas;  // células de 20 cm que o robô visitou
+  // fluidez do movimento (ponderada pelo tempo)
+  float t = 0, t_preso = 0, t_giro = 0, t_re = 0, u_esq = 0, u_dir = 0;
+  int trocas = 0, sinal_giro = 0, abruptos = 0;
 };
 
-static void mover(const Mundo& w, Robo& r, float v, float giro, float tempo, Contagem& c) {
+// devolve quanto o carrinho andou de verdade (0 se encostou)
+static float mover(const Mundo& w, Robo& r, float v, float giro, float tempo, Contagem& c) {
   float th = r.th + giro * tempo;
   float nx = r.x + v * cosf(th) * tempo, ny = r.y + v * sinf(th) * tempo;
   r.th = th;
   if (!w.livre(nx, ny)) {
     c.batidas++;  // encostou: não anda
-    return;
+    return 0;
   }
+  float andou = hypotf(nx - r.x, ny - r.y);
   r.x = nx;
   r.y = ny;
   if (v > 0) c.andou += v * tempo;
   c.celulas.insert({(int)(r.x / 20), (int)(r.y / 20)});
+  return andou;
 }
 
-static float g_v = 0;  // velocidade da última ação para frente (para o carrinho continuar andando um pouco depois de frear)
+// velocidade de regime de uma roda para um comando de -1 a 1: abaixo de 5% fica parada; senão vai de metade da velocidade cheia até a cheia
+// (o motor só vence o atrito a partir do PWM_MINIMO, por isso não existe velocidade bem baixa)
+static float cmd_para_cm_s(float x) {
+  float a = fabsf(x);
+  if (a < 0.05f) return 0;
+  float v = (0.5f + 0.5f * std::min(a, 1.0f)) * CARRINHO_CM_S_NORMAL;
+  return x < 0 ? -v : v;
+}
+static const float K_GIRO = CARRINHO_GRAUS_S / (0.8f * CARRINHO_CM_S_NORMAL);  // graus/s por cm/s de diferença entre as rodas
 
-static void executar(const Mundo& w, Robo& r, Acao a, float tempo, Contagem& c) {
-  const float GIRO = CARRINHO_GRAUS_S * PI_ / 180;  // os números do carrinho vêm do config.h (o robô mede com os comandos v e g)
-  g_v = (a == FRENTE) ? CARRINHO_CM_S_NORMAL : (a == FRENTE_LENTO ? CARRINHO_CM_S_LENTO : 0);
-  switch (a) {
-    case FRENTE: mover(w, r, CARRINHO_CM_S_NORMAL * (1 + normal(0.1f)), 0, tempo, c); break;
-    case FRENTE_LENTO: mover(w, r, CARRINHO_CM_S_LENTO * (1 + normal(0.1f)), 0, tempo, c); break;
-    case GIRAR_ESQ: mover(w, r, 0, GIRO * (1 + normal(0.3f)), tempo, c); break;
-    case GIRAR_DIR: mover(w, r, 0, -GIRO * (1 + normal(0.3f)), tempo, c); break;
-    case RE: mover(w, r, -0.85f * CARRINHO_CM_S_LENTO, 0, tempo, c); break;
-    default: break;
+// um pedaço de tempo andando com os comandos das rodas (já depois da rampa do robô)
+static void aplicar(const Mundo& w, Robo& r, Rodas cmd, float dt, Contagem& c) {
+  float alfa = 1 - expf(-dt / 0.12f);  // a roda leva ~0,12 s para chegar na velocidade (a freada tem ~5 cm de deslize)
+  r.se += (cmd_para_cm_s(cmd.esq) - r.se) * alfa;
+  r.sd += (cmd_para_cm_s(cmd.dir) - r.sd) * alfa;
+  float v = (r.se + r.sd) / 2, om = (r.se - r.sd) / 2 * K_GIRO;  // om > 0 = vira para a direita (graus/s)
+  float real = mover(w, r, v * (1 + normal(0.1f)), -om * (1 + normal(0.3f)) * PI_ / 180, dt, c) / std::max(dt, 1e-3f);  // velocidade de verdade (cm/s)
+  c.t += dt;
+  if ((cmd.esq + cmd.dir) / 2 > 0.3f && real < 3) c.t_preso += dt;  // mandou andar e não saiu do lugar: empurrando uma parede
+  if (fabsf(v) < 6 && fabsf(om) > 30) c.t_giro += dt;
+  if (v < -3) c.t_re += dt;
+  int sinal = om > 20 ? 1 : (om < -20 ? -1 : 0);
+  if (sinal != 0) {
+    if (c.sinal_giro != 0 && sinal != c.sinal_giro) c.trocas++;
+    c.sinal_giro = sinal;
   }
+  if (fabsf(cmd.esq - c.u_esq) > 0.3f || fabsf(cmd.dir - c.u_dir) > 0.3f) c.abruptos++;  // degrau nos motores (solavanco)
+  c.u_esq = cmd.esq;
+  c.u_dir = cmd.dir;
 }
 
-// o carrinho não para na hora: continua andando uns 0,07 s (o tempo de parar os motores e de o sensor medir de novo)
-static void deslizar(const Mundo& w, Robo& r, Contagem& c) {
-  if (g_v > 0) mover(w, r, g_v * (1 + normal(0.15f)), 0, 0.07f, c);
-  g_v = 0;
-}
-static void freio(const Mundo& w, Robo& r, Contagem& c) { executar(w, r, RE, 0.25f, c); }
+// freio de segurança do robô: para, espera 0,08 s (o carrinho ainda desliza um pouco)
+static void parar_e_esperar(const Mundo& w, Robo& r, Contagem& c) { aplicar(w, r, Rodas{0, 0}, 0.08f, c); }
+static void re_curta(const Mundo& w, Robo& r, Contagem& c) { aplicar(w, r, Rodas{-0.15f, -0.15f}, 0.25f, c); }
+// fuga de um canto: ré de 0,5 s e giro de 0,7 s (a mesma do robo.ino)
 static void fuga(const Mundo& w, Robo& r, int lado, Contagem& c) {
-  executar(w, r, RE, 0.5f, c);
-  executar(w, r, lado > 0 ? GIRAR_DIR : GIRAR_ESQ, 0.7f, c);
+  aplicar(w, r, Rodas{-0.15f, -0.15f}, 0.5f, c);
+  aplicar(w, r, misturar(0, 0.6f * lado), 0.7f, c);
 }
 
 // o que conta como erro: a distância VERDADEIRA ficar dentro da zona de perigo
@@ -154,41 +177,48 @@ static void contar(const Mundo& w, const Robo& r, Contagem& c) {
 
 // ---- políticas ------------------------------------------------------------------------------------------------------------
 struct Politica {
+  RampaMotor rampa;
+  bool usa_rampa = true;  // o robô novo manda os motores em rampa; o modo autônomo antigo mandava em degrau
   virtual ~Politica() {}
-  virtual void nova_sala() {}
+  virtual void nova_sala() { rampa.parar(); }
   virtual void passo(const Mundo& w, Robo& r, float d, Contagem& c) = 0;
-};
-
-// o freio de segurança é o mesmo para todas as políticas
-static bool freio_de_seguranca(const Mundo& w, Robo& r, float d, Contagem& c) {
-  if (d < RL_FREIO_INICIAL_CM) {
-    deslizar(w, r, c);
-    freio(w, r, c);
+  // um ciclo (DT) andando com o alvo das rodas
+  void rodar(const Mundo& w, Robo& r, Rodas alvo, Contagem& c) {
+    Rodas cmd = usa_rampa ? rampa.seguir(alvo, 0.2f) : alvo;
+    if (!usa_rampa) rampa.esq = alvo.esq, rampa.dir = alvo.dir;
+    aplicar(w, r, cmd, DT, c);
+  }
+  // freio de segurança das políticas de comparação (o do agente é outro, com medição da folga)
+  bool freio_seguranca(const Mundo& w, Robo& r, float d, Contagem& c) {
+    if (d >= RL_FREIO_INICIAL_CM) return false;
+    rampa.parar();
+    parar_e_esperar(w, r, c);
+    re_curta(w, r, c);
     return true;
   }
-  return false;
-}
+};
 
 struct Aleatoria : Politica {
   void passo(const Mundo& w, Robo& r, float d, Contagem& c) override {
-    if (freio_de_seguranca(w, r, d, c)) return;
-    executar(w, r, (Acao)(gen() % N_ACOES), DT, c);
+    if (freio_seguranca(w, r, d, c)) return;
+    rodar(w, r, rodas_da_acao((Acao)(gen() % N_ACOES), d, RL_FREIO_INICIAL_CM, false), c);
   }
 };
 
-// o modo autônomo antigo do robo.ino: anda até 25 cm, recua, vira para o lado (alternando) até ter 40 cm livres
+// o modo autônomo ANTIGO do robo.ino: anda na velocidade cheia até 25 cm, recua, gira (alternando o lado) até ter 40 cm livres.
+// Mandava os motores em degrau (0 -> 180 -> ré -> giro).
 struct Regras : Politica {
   int fase = 0, n = 0, lado = 1;
   bool com_detector;
   DetectorTravado detector;
   FiltroDistancia filtro;
   bool andou_antes = false;
-  explicit Regras(bool com_detector_) : com_detector(com_detector_) {}
-  void nova_sala() override { fase = 0; n = 0; detector.esquecer(); filtro.esquecer(); andou_antes = false; }
+  explicit Regras(bool com_detector_) : com_detector(com_detector_) { usa_rampa = false; }
+  void nova_sala() override { Politica::nova_sala(); fase = 0; n = 0; detector.esquecer(); filtro.esquecer(); andou_antes = false; }
   void passo(const Mundo& w, Robo& r, float d, Contagem& c) override {
     if (com_detector) {
       d = filtro.filtrar(d, 2 * DIST_MINIMA_CM, DIST_MINIMA_CM - 1);
-      bool preso = detector.atualizar(andou_antes && fase == 0, d);
+      bool preso = detector.atualizar(andou_antes && fase == 0, d, RL_TRAVADO_CM);
       andou_antes = false;
       if (preso && fase == 0) { fase = 1; n = 3; lado = -lado; }
     }
@@ -198,18 +228,41 @@ struct Regras : Politica {
       lado = -lado;
     }
     if (fase == 1) {
-      if (n-- > 0) { executar(w, r, RE, DT, c); return; }
+      if (n-- > 0) { rodar(w, r, Rodas{-0.15f, -0.15f}, c); return; }
       fase = 2;
       n = 0;
     }
     if (fase == 2) {
       n++;
       if ((n > 4 && d >= 40) || n >= 11) fase = 0;
-      else { executar(w, r, lado > 0 ? GIRAR_DIR : GIRAR_ESQ, DT, c); return; }
+      else { rodar(w, r, misturar(0, 0.6f * lado), c); return; }
     }
-    if (freio_de_seguranca(w, r, d, c)) return;
-    executar(w, r, FRENTE, DT, c);
+    if (freio_seguranca(w, r, d, c)) return;
+    rodar(w, r, Rodas{1, 1}, c);
     andou_antes = true;
+  }
+};
+
+// o modo autônomo NOVO (Navegador do logica.h): velocidade pela distância, curva antes da parede, gira no lugar só se precisar
+struct Suave : Politica {
+  Navegador nav;
+  DetectorTravado detector;
+  FiltroDistancia filtro;
+  bool seguiu_antes = false;
+  void nova_sala() override { Politica::nova_sala(); nav.esquecer(); detector.esquecer(); filtro.esquecer(); seguiu_antes = false; }
+  void passo(const Mundo& w, Robo& r, float d, Contagem& c) override {
+    d = filtro.filtrar(d, 2 * DIST_MINIMA_CM, DIST_MINIMA_CM - 1);
+    if (d < DIST_MINIMA_CM - 10) rampa.parar();  // algo muito perto: tira a velocidade na hora
+    Navegador::Saida n = nav.passo(d, DIST_MINIMA_CM, DIST_MINIMA_CM + 50, DIST_MINIMA_CM + 20);
+    if (n.preso || detector.atualizar(seguiu_antes, d, RL_TRAVADO_CM)) {
+      fuga(w, r, nav.lado, c);
+      if (!n.preso) nav.lado = -nav.lado;
+      nav.esquecer(); detector.esquecer(); filtro.esquecer(); rampa.parar();
+      seguiu_antes = false;
+      return;
+    }
+    seguiu_antes = (n.v > 0.5f && fabsf(n.w) < 0.05f);
+    rodar(w, r, misturar(n.v, n.w), c);
   }
 };
 
@@ -218,19 +271,20 @@ struct Aprendiz : Politica {
   FiltroDistancia filtro;
   bool explorar, aprender;
   Aprendiz(bool explorar_, bool aprender_) : explorar(explorar_), aprender(aprender_) {}
-  void nova_sala() override { ag.recomecar(); filtro.esquecer(); }
+  void nova_sala() override { Politica::nova_sala(); ag.recomecar(); filtro.esquecer(); }
   void passo(const Mundo& w, Robo& r, float d, Contagem& c) override {
     d = filtro.filtrar(d, 2 * DIST_MINIMA_CM, DIST_MINIMA_CM - 1);
     Decisao x = ag.decidir(d, explorar, aprender, false);
-    if (x.escapar) { g_v = 0; fuga(w, r, x.lado, c); filtro.esquecer(); return; }
+    if (x.escapar) { rampa.parar(); fuga(w, r, x.lado, c); filtro.esquecer(); return; }
     if (x.freio) {
-      deslizar(w, r, c);                // o carrinho ainda anda um pouco depois de decidir parar
-      ag.freou(medir(w, r), aprender);  // mede quanto espaço sobrou e ajusta a distância do freio
-      freio(w, r, c);
+      rampa.parar();
+      parar_e_esperar(w, r, c);          // o carrinho ainda anda um pouco depois de decidir parar
+      ag.freou(medir(w, r), aprender);   // mede quanto espaço sobrou e ajusta a distância do freio
+      re_curta(w, r, c);
       filtro.esquecer();
       return;
     }
-    executar(w, r, x.acao, DT, c);
+    rodar(w, r, rodas_da_acao(x.acao, d, ag.m.freio_cm[0], false), c);
   }
 };
 
@@ -248,7 +302,9 @@ static Contagem sala(Politica& p, int passos, bool apertada = false) {
 }
 
 static void imprimir(const char* tipo, const std::string& nome, int idx, const Contagem& c, float eps = 0) {
-  printf("%s,%s,%d,%d,%d,%d,%.1f,%zu,%d,%.4f\n", tipo, nome.c_str(), idx, c.quase, c.freios, c.batidas, c.andou, c.celulas.size(), c.muito_perto, eps);
+  float t = std::max(c.t, 1e-3f), min = t / 60;
+  printf("%s,%s,%d,%d,%d,%d,%.1f,%zu,%d,%.1f,%.1f,%.1f,%.1f,%.1f,%.4f\n", tipo, nome.c_str(), idx, c.quase, c.freios, c.batidas, c.andou, c.celulas.size(),
+         c.muito_perto, 100 * c.t_preso / t, 100 * c.t_giro / t, 100 * c.t_re / t, c.trocas / min, c.abruptos / min, eps);
 }
 
 int main(int argc, char** argv) {
@@ -279,13 +335,14 @@ int main(int argc, char** argv) {
   // 2) avaliação em salas que ele nunca viu (sem explorar e sem aprender), contra as outras políticas
   Aleatoria aleatoria;
   Regras regras(false), regras_novas(true);
+  Suave suave;
   Aprendiz a_frio(false, false), a_quente(false, false), a_fixo(false, false), nada(false, false);
   a_frio.ag = frio.ag;
   a_quente.ag = quente.ag;
   a_fixo.ag = fixo.ag;
   nada.ag.zerar(false);  // agente sem treino nenhum, só a tabela zerada
   struct { const char* nome; Politica* p; } todos[] = {
-      {"aleatoria", &aleatoria}, {"regras_antigas", &regras}, {"regras_com_detector", &regras_novas}, {"agente_sem_treino", &nada},
+      {"aleatoria", &aleatoria}, {"regras_antigas", &regras}, {"regras_com_detector", &regras_novas}, {"autonomo_suave", &suave}, {"agente_sem_treino", &nada},
       {"agente_do_zero", &a_frio}, {"agente_margem_fixa", &a_fixo}, {"agente_com_palpite", &a_quente}};
   for (auto& t : todos) {
     gen.seed(1000);  // as mesmas salas para todos

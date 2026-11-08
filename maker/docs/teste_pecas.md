@@ -59,7 +59,7 @@ Grave o sketch de teste: `./maker/firmware/gravar.sh teste_pecas` e digite os co
 | 8 | Cobrir o LDR | anda devagar (pouca luz) |
 | 9 | Cobrir o LDR e pôr a mão na frente | para, apita 3 vezes e o alerta aparece no MVP |
 | 10 | Piscar a lanterna do celular sobre o LDR | classe `luz_piscando` aparece no MVP (a cada 30 s no máximo) |
-| 11 | Mão vindo rápido na direção do robô | freia e recua antes de chegar perto |
+| 11 | Mão vindo rápido na direção do robô | freia e recua antes de chegar perto (só no modo autônomo) |
 | 12 | **Modo treino** (círculo no Dabble ou `a` no monitor), **no chão**, em um espaço fechado e sem degraus. Deixe uns 10 a 20 minutos | anda, testa ações aleatórias (LED aceso), dá um bip a cada freio de segurança e, no Monitor Serial, aparece `treino: bloco ...` a cada 300 passos. Os bips e as "quase-batidas" devem ficar mais raros com o tempo |
 | 13 | `q` no Monitor Serial depois do treino | mostra a melhor ação para cada distância: longe anda, perto vira |
 | 13b | Observe as linhas `freio: parou a X cm do obstáculo` no Monitor Serial (com o USB) | a distância do freio vai de 20 para menos se ele para com folga, e volta a subir se parar a menos de 6 cm. Se ele **tocar** o obstáculo, suba `TREINO_MARGEM_MIN_CM` |
@@ -80,10 +80,9 @@ Faça uma vez com o carrinho montado. Cada comando pede o que fazer e espera voc
 Os comandos `v` e `g` fazem o carrinho andar: use o chão, com a frente livre. Os valores de `v` e `g` só alimentam a simulação do treino; o robô de verdade não os usa.
 
 ## 5. Ajustes sem mexer no código (`config.h`)
-- Gira pouco ou demais na manobra: `TEMPO_GIRO_MS` (giro mínimo; se o caminho continuar fechado ele continua girando um pouco mais). Recua pouco: `TEMPO_RE_MS`.
+- Muito rápido ou lento: `VELOCIDADE_NORMAL` e `VELOCIDADE_LENTA` (o carrinho acelera e freia em rampa e a velocidade acompanha a distância até o obstáculo). Curva muito cedo ou tarde: `DIST_MINIMA_CM` (ele começa a curvar 50 cm antes dela).
 - Com as **rodas no ar** (bancada), os modos autônomo, treino e IA acham que o carrinho ficou preso (a distância não muda enquanto ele "anda") e ficam fazendo manobra de fuga. É normal: teste esses modos no chão.
 - Ainda bate na parede: aumente `DIST_MINIMA_CM` (distância em que ele para) ou diminua `VELOCIDADE_NORMAL`. Vira cedo demais: diminua `DIST_MINIMA_CM`.
-- Muito rápido ou lento: `VELOCIDADE_NORMAL` e `VELOCIDADE_LENTA`.
 - Os motores zumbem e não andam: aumente `PWM_MINIMO`.
 Depois de mudar, rode `./gravar.sh` de novo.
 

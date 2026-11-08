@@ -30,11 +30,9 @@
 #define VELOCIDADE_NORMAL 180  // 0 a 255
 #define VELOCIDADE_LENTA 120
 #define PWM_MINIMO 110  // abaixo disso os motores TT não vencem o atrito e só zumbem
-#define TEMPO_RE_MS 400
-#define TEMPO_GIRO_MS 450  // giro mínimo da manobra: ajuste para o robô virar uns 90 graus
 
 // Anti-colisão (modo autônomo e Dabble). Se ainda bater na parede, aumente DIST_MINIMA_CM ou diminua VELOCIDADE_NORMAL.
-#define DIST_MINIMA_CM 25  // algo mais perto que isso à frente: o robô para e (no autônomo) recua e vira para o lado
+#define DIST_MINIMA_CM 25  // no autônomo: o carrinho começa a curvar a 75 cm e a girar no lugar a esta distância (sem ré)
 
 // Modo treino (o robô ajusta sozinho a distância do freio entre TREINO_MARGEM_MIN_CM e 30 cm; ver docs/ia.md)
 #define TREINO_MARGEM_MIN_CM 14  // o freio nunca chega mais perto que isso (é o limite de segurança). Medido no carrinho: com 12 ele parou a menos de 6 cm do obstáculo

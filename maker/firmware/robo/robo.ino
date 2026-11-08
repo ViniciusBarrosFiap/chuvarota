@@ -27,8 +27,7 @@ const int LDR = 34;
 const int BUZZER = 23, LED = 2;
 
 // ajustes internos (não precisam mudar)
-const float DIST_LIVRE_CM = 40;                // na manobra, só para de girar com pelo menos esta distância livre à frente
-const unsigned long TEMPO_GIRO_MAX_MS = 1500;  // limite do giro da manobra quando o caminho continua fechado
+const float PASSO_RAMPA = 0.2f;                // o quanto cada roda pode mudar por ciclo (0 a 1): aceleração suave
 const int SENSOR_INTERVALO_MS = 5;             // pausa entre uma leitura e outra do sensor, para o eco anterior sumir
 const float SENSOR_DIST_EIXO_CM = 8;           // distância do sensor ao eixo do carrinho (usada no comando g)
 
@@ -46,6 +45,8 @@ FiltroDistancia filtro;  // sem eco logo depois de uma leitura perto = obstácul
 enum Modo { MANUAL = 0, AUTONOMO = 1, TREINO = 2, IA = 3 };
 const char* NOMES_MODO[] = {"manual (Dabble)", "autônomo (regras + TinyML)", "treino (aprendendo por tentativa e erro)", "IA (usa o que aprendeu)"};
 int modo = USAR_DABBLE ? MODO_INICIAL : (MODO_INICIAL > 0 ? MODO_INICIAL : AUTONOMO);  // sem Dabble não há como dirigir: começa sozinho
+RampaMotor rampa;          // aceleração suave dos motores
+Navegador navegador;       // modo autônomo: velocidade pela distância e curvas antes da parede
 DetectorTravado detector;  // modo autônomo: mandou andar e a distância não mudou = preso raspando em uma parede
 Agente agente;             // aprendizado por reforço (modos treino e IA): a tabela fica na memória flash
 int rotulo_coleta = 0;     // MODO_COLETA: classe digitada no Monitor Serial (0 a 5)
@@ -70,7 +71,16 @@ void motor(int esq, int dir) {
   ledcWrite(ENB, dir == 0 ? 0 : constrain(max(abs(dir), PWM_MINIMO), 0, 255));
 }
 
-void parar() { motor(0, 0); }
+void parar() {
+  rampa.parar();
+  motor(0, 0);
+}
+
+// manda as rodas em rampa (o motor acelera e freia aos poucos, em vez de pular de 0 a 180)
+void motor_suave(Rodas alvo) {
+  Rodas r = rampa.seguir(alvo, PASSO_RAMPA);
+  motor(pwm_de(r.esq, PWM_MINIMO, VELOCIDADE_NORMAL), pwm_de(r.dir, PWM_MINIMO, VELOCIDADE_NORMAL));
+}
 
 void apitar(int vezes) {
   for (int i = 0; i < vezes; i++) {
@@ -127,31 +137,20 @@ void salvar_calibracao() {
   calibracao_mudou = false;
 }
 
-// Para, recua um pouco e vira para o lado, alternando esquerda e direita a cada manobra (para não ficar preso em canto).
-// Gira o mínimo de TEMPO_GIRO_MS e continua girando em passos curtos até haver DIST_LIVRE_CM livres à frente (no máximo TEMPO_GIRO_MAX_MS).
-void manobra() {
-  static int lado = 1;  // 1 = vira para a direita, -1 = para a esquerda
-  lado = -lado;
+// Fuga de um canto: ré maior e giro para o lado (lado: 1 = direita, -1 = esquerda). Só quando está preso; no resto o carrinho curva.
+void fuga(int lado) {
   parar();
-  delay(150);
+  delay(100);
   motor(-VELOCIDADE_LENTA, -VELOCIDADE_LENTA);
-  delay(TEMPO_RE_MS);
+  delay(500);
   int v = VELOCIDADE_LENTA + 30;
-  unsigned long inicio = millis();
   motor(lado * v, -lado * v);
-  delay(TEMPO_GIRO_MS);
+  delay(700);
   parar();
-  delay(80);
-  while (distancia() < DIST_LIVRE_CM && millis() - inicio < TEMPO_GIRO_MAX_MS) {
-    motor(lado * v, -lado * v);
-    delay(100);
-    parar();
-    delay(60);
-  }
-  parar();
-  preenchidas = 0;  // as leituras de antes da manobra não valem mais
   filtro.esquecer();
   detector.esquecer();
+  navegador.esquecer();
+  preenchidas = 0;
 }
 
 // ---- modos treino e IA (aprendizado por reforço, ver aprendizado.h) --------------------------------------------------------------
@@ -167,17 +166,9 @@ void carregar_agente() {
                 agente.m.freio_cm[0]);
 }
 
-// o que o robô faz em cada ação do agente
-void executar_acao(Acao a, bool escuro) {
-  int giro = VELOCIDADE_LENTA + 30;
-  switch (a) {
-    case FRENTE: motor(escuro ? VELOCIDADE_LENTA : VELOCIDADE_NORMAL, escuro ? VELOCIDADE_LENTA : VELOCIDADE_NORMAL); break;  // no escuro anda devagar
-    case FRENTE_LENTO: motor(VELOCIDADE_LENTA, VELOCIDADE_LENTA); break;
-    case GIRAR_ESQ: motor(-giro, giro); break;
-    case GIRAR_DIR: motor(giro, -giro); break;
-    case RE: motor(-VELOCIDADE_LENTA, -VELOCIDADE_LENTA); break;
-    default: parar();
-  }
+// o que o robô faz em cada ação do agente: a velocidade acompanha a distância (mais devagar perto do obstáculo) e vai em rampa
+void executar_acao(Acao a, float d, bool escuro) {
+  motor_suave(rodas_da_acao(a, d, agente.m.freio_cm[0], escuro));
 }
 
 void imprimir_bloco() {
@@ -192,16 +183,7 @@ void passo_ia(float d, bool escuro, bool treinando) {
   digitalWrite(LED, x.explorou);  // acende nos ciclos em que ele testa uma ação aleatória (explorando)
   if (x.escapar) {  // preso: ré maior e giro para o lado
     Serial.println("preso: fuga");
-    parar();
-    delay(100);
-    motor(-VELOCIDADE_LENTA, -VELOCIDADE_LENTA);
-    delay(500);
-    int v = VELOCIDADE_LENTA + 30;
-    motor(x.lado * v, -x.lado * v);
-    delay(700);
-    parar();
-    filtro.esquecer();
-    preenchidas = 0;
+    fuga(x.lado);
   } else if (x.freio) {  // chegou perto demais: freio de segurança (um erro, que o agente aprende a evitar)
     parar();
     delay(80);  // espera o carrinho parar de verdade
@@ -219,7 +201,7 @@ void passo_ia(float d, bool escuro, bool treinando) {
     parar();
     filtro.esquecer();
   } else {
-    executar_acao(x.acao, escuro);
+    executar_acao(x.acao, d, escuro);
   }
   if (agente.fechou_bloco) {
     agente.fechou_bloco = false;
@@ -235,6 +217,7 @@ void trocar_modo(int novo) {
   preenchidas = 0;
   filtro.esquecer();
   detector.esquecer();
+  navegador.esquecer();
   agente.recomecar();
   apitar(novo + 1);
   Serial.printf("modo: %s\n", NOMES_MODO[novo]);
@@ -628,37 +611,51 @@ void loop() {
     return;
   }
 
-  // modo autônomo: mandou andar e a distância não mudou por 3 ciclos = preso raspando em uma parede (o sensor só enxerga reto)
-  static bool andou_antes = false;
-  if (detector.atualizar(andou_antes, d) && (c == 0 || c == 1 || c == 4)) c = 2;
-  andou_antes = (c == 0 || c == 1 || c == 4);
-
-  switch (c) {
-    case 0: motor(VELOCIDADE_NORMAL, VELOCIDADE_NORMAL); break;
-    case 1: motor(VELOCIDADE_LENTA, VELOCIDADE_LENTA); break;  // pouca luz: anda devagar
-    case 2: manobra(); em_vigor = 0; break;
-    case 3:
-      parar();
-      apitar(3);
-      urgente = true;
-      manobra();
-      em_vigor = 0;
-      break;
-    case 4:  // luz piscando: lâmpada com defeito; segue devagar e avisa uma vez a cada 30 s
-      motor(VELOCIDADE_LENTA, VELOCIDADE_LENTA);
-      if (millis() - ultima_luz_piscando > 30000) {
-        ultima_luz_piscando = millis();
-        urgente = true;
-      }
-      break;
-    case 5:  // algo se aproxima rápido: freia e recua um pouco antes de chegar perto
-      parar();
-      motor(-VELOCIDADE_LENTA, -VELOCIDADE_LENTA);
-      delay(250);
-      parar();
-      preenchidas = 0;
-      filtro.esquecer();
-      em_vigor = 0;
-      break;
+  // Modo autônomo. O navegador anda reto na velocidade cheia, vai diminuindo e CURVANDO antes da parede e só gira no lugar a menos de
+  // DIST_MINIMA_CM (sem ré). O TinyML continua classificando: manda os alertas ao MVP e deixa o carrinho um pouco mais devagar no escuro.
+  bool escuro = (c == 1 || c == 3);
+  if (c == 3 && millis() - ultimo_alerta > 10000) {  // escuro com obstáculo: para, apita 3 vezes e avisa na hora
+    ultimo_alerta = millis();
+    parar();
+    apitar(3);
+    urgente = true;
+    return;
   }
+  if (c == 4 && millis() - ultima_luz_piscando > 30000) {  // luz piscando: lâmpada com defeito, avisa uma vez a cada 30 s
+    ultima_luz_piscando = millis();
+    urgente = true;
+  }
+  // classe 5 (algo se aproxima rápido): só vale com o carrinho parado. Andando, quem se aproxima da parede é ele mesmo, e a reação
+  // (freiar e dar ré) interrompia o movimento toda vez que ele andava rápido em direção a uma parede.
+  bool carrinho_parado = (fabsf(rampa.esq) + fabsf(rampa.dir)) < 0.3f;
+  if (c == 5 && carrinho_parado && millis() - ultimo_alerta > 3000) {  // algo se aproxima rápido: freia e recua um pouco antes de chegar perto
+    ultimo_alerta = millis();
+    parar();
+    motor(-VELOCIDADE_LENTA, -VELOCIDADE_LENTA);
+    delay(250);
+    parar();
+    preenchidas = 0;
+    filtro.esquecer();
+    navegador.esquecer();
+    return;
+  }
+  if (d < DIST_MINIMA_CM - 10) parar();  // algo apareceu muito perto: freio na hora, sem rampa
+  Navegador::Saida n = navegador.passo(d, DIST_MINIMA_CM, DIST_MINIMA_CM + 50, DIST_MINIMA_CM + 20);
+  if (n.preso) {  // girou por 5 s sem abrir espaço
+    Serial.println("preso: fuga");
+    fuga(navegador.lado);
+    return;
+  }
+  // mandou seguir reto e a distância não mudou por 3 ciclos = preso raspando em uma parede (o sensor só enxerga reto)
+  static bool seguiu_antes = false;
+  if (detector.atualizar(seguiu_antes, d, RL_TRAVADO_CM)) {
+    Serial.println("preso raspando: fuga");
+    fuga(navegador.lado);
+    navegador.lado = -navegador.lado;
+    seguiu_antes = false;
+    return;
+  }
+  seguiu_antes = (n.v > 0.5f && fabsf(n.w) < 0.05f);
+  float fator = escuro ? 0.85f : 1.0f;
+  motor_suave(misturar(n.v * fator, n.w));
 }

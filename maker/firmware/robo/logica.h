@@ -2,6 +2,7 @@
 // Três partes: 1) setas e joystick do Dabble -> rodas, 2) filtro da distância e detector de travamento, 3) leitura do sensor e calibração.
 #pragma once
 #include <math.h>
+#include <stdint.h>
 
 // ================================================================================================================================
 // 1) Dabble -> rodas
@@ -79,13 +80,13 @@ struct DetectorTravado {
     andando = 0;
   }
   // andando: mandou andar para frente neste ciclo. Devolve true quando está preso (e recomeça a contagem).
-  bool atualizar(bool andando_agora, float d) {
+  bool atualizar(bool andando_agora, float d, float limite_cm = 3.0f) {
     for (int i = 0; i < 3; i++) hist[i] = hist[i + 1];
     hist[3] = d;
     andando = andando_agora ? andando + 1 : 0;
     if (andando >= 4 && d < 190 && hist[0] < 190) {
       float mudou = hist[3] - hist[0];
-      if (mudou > -3.0f && mudou < 3.0f) {
+      if (mudou > -limite_cm && mudou < limite_cm) {
         esquecer();
         return true;
       }
@@ -187,3 +188,120 @@ inline float angulo_giro_graus(float d0, float d1, float r_eixo) {
   if (c < -1) c = -1;
   return acosf(c) * 180.0f / 3.14159265f;
 }
+
+// ================================================================================================================================
+// 4) Movimento suave: velocidade pela distância, curvas, rampa nos motores e o navegador do modo autônomo
+// ================================================================================================================================
+// Por que existe: antes o carrinho trocava de ação a cada ciclo, os motores iam de 0 a 180 em um degrau e as manobras eram "parar, ré,
+// girar, parar". Agora a velocidade muda aos poucos, as curvas começam antes da parede e o motor sobe e desce em rampa.
+
+// aleatório simples (xorshift), para não depender do Arduino
+inline uint32_t proximo_aleatorio(uint32_t& s) {
+  s ^= s << 13;
+  s ^= s >> 17;
+  s ^= s << 5;
+  return s;
+}
+inline float aleatorio01(uint32_t& s) { return (proximo_aleatorio(s) >> 8) * (1.0f / 16777216.0f); }
+
+struct Rodas {
+  float esq, dir;  // -1 a 1 (positivo = para frente)
+};
+
+// andar (v) e virar (w, positivo = direita) misturados nas duas rodas
+inline Rodas misturar(float v, float w) {
+  Rodas r;
+  r.esq = fmaxf(-1.0f, fminf(1.0f, v + w));
+  r.dir = fmaxf(-1.0f, fminf(1.0f, v - w));
+  return r;
+}
+
+// velocidade pela distância até o obstáculo: 1 (livre, a partir de 'cruzeiro' cm) até 0,45 (perto do freio), sem degrau
+inline float perfil_velocidade(float d, float margem, float cruzeiro = 90) {
+  float t = (d - margem) / (cruzeiro - margem);
+  return fmaxf(0.45f, fminf(1.0f, t));
+}
+
+// de -1..1 para PWM: abaixo de 5% fica parado; senão vai de pwm_min (onde o motor vence o atrito) até pwm_max
+inline int pwm_de(float x, int pwm_min, int pwm_max) {
+  float a = fabsf(x);
+  if (a < 0.05f) return 0;
+  int p = pwm_min + (int)((pwm_max - pwm_min) * fminf(a, 1.0f));
+  return x < 0 ? -p : p;
+}
+
+// Rampa: limita o quanto cada roda pode mudar por ciclo (aceleração suave). Para frear de verdade use parar().
+struct RampaMotor {
+  float esq = 0, dir = 0;
+  Rodas seguir(Rodas alvo, float passo = 0.2f) {
+    esq += fmaxf(-passo, fminf(passo, alvo.esq - esq));
+    dir += fmaxf(-passo, fminf(passo, alvo.dir - dir));
+    Rodas r = {esq, dir};
+    return r;
+  }
+  void parar() { esq = dir = 0; }
+};
+
+// Navegador do modo autônomo. Roda a cada ciclo com a distância à frente e devolve o quanto andar (v, 0 a 1) e virar (w, -1 a 1).
+//  - longe (mais que curva_cm): segue reto na velocidade cheia;
+//  - entre curva_cm e parar_cm: vai diminuindo a velocidade e CURVANDO para o lado preferido, cada vez mais forte;
+//  - a menos de parar_cm: gira no lugar até haver saida_cm livres (2 ciclos seguidos), sem ré.
+// O lado da curva é escolhido por realimentação: se depois de uns 5 ciclos curvando a distância continua caindo (mais de 8 cm), o lado
+// estava errado e ele troca. Depois de cada desvio ele às vezes troca o lado, para não andar sempre em círculo.
+struct Navegador {
+  struct Saida {
+    float v, w;
+    bool preso;  // girou por 5 s sem abrir espaço: fazer uma fuga
+  };
+  int lado = 1;  // 1 = direita, -1 = esquerda
+  uint32_t rng = 1234567u;
+
+  void esquecer() {
+    girando = false;
+    ticks_giro = claros = ticks_curva = 0;
+  }
+
+  Saida passo(float d, float parar_cm, float curva_cm, float saida_cm) {
+    Saida s = {0, 0, false};
+    if (!girando && d < parar_cm) {
+      girando = true;
+      ticks_giro = claros = 0;
+    }
+    if (girando) {
+      ticks_giro++;
+      claros = (d >= saida_cm) ? claros + 1 : 0;
+      if (claros >= 2) {  // abriu espaço: volta a andar
+        girando = false;
+        ticks_curva = 0;
+        if (aleatorio01(rng) < 0.5f) lado = -lado;
+      } else {
+        if (ticks_giro == 25) lado = -lado;  // 2,5 s sem abrir: tenta o outro lado
+        if (ticks_giro >= 50) {
+          s.preso = true;
+          girando = false;
+          ticks_giro = 0;
+        }
+        s.w = 0.6f * lado;
+        return s;
+      }
+    }
+    float t = fmaxf(0.0f, fminf(1.0f, (curva_cm - d) / (curva_cm - parar_cm)));
+    s.v = 1.0f - 0.45f * t;
+    s.w = lado * 0.7f * t;
+    if (t > 0.15f) {  // curvando: confere se a distância está melhorando
+      if (ticks_curva == 0) d_curva = d;
+      if (++ticks_curva >= 5) {
+        if (d < d_curva - 8) lado = -lado;
+        ticks_curva = 0;
+      }
+    } else {
+      ticks_curva = 0;
+    }
+    return s;
+  }
+
+ private:
+  bool girando = false;
+  int ticks_giro = 0, claros = 0, ticks_curva = 0;
+  float d_curva = 200;
+};

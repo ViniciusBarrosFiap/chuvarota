@@ -17,7 +17,7 @@ Carro robô com ESP32 **controlado pelo app Dabble** (Bluetooth), que também **
 | Botão | Modo | O que faz |
 |---|---|---|
 | (padrão) | **manual** | você dirige com as setas ou o joystick; ele não deixa bater de frente |
-| **Triângulo** | **autônomo** | anda sozinho com os sensores e o TinyML: recua e vira para o lado ao achar obstáculo |
+| **Triângulo** | **autônomo** | anda sozinho com movimento suave: diminui a velocidade e **curva antes da parede**, e só gira no lugar a menos de 25 cm |
 | **Círculo** | **treino** | anda sozinho **e aprende** por tentativa e erro (LED aceso = testando ação aleatória; bip curto = freio de segurança, um erro) |
 | **Start** | **IA** | usa o que aprendeu, sem explorar |
 | **X** | volta ao **manual** | |
@@ -55,16 +55,16 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 |---|---|---|
 | `ok` | claro e caminho livre | anda em velocidade normal |
 | `pouca_luz` | ambiente escuro, caminho livre | anda devagar e acende o LED |
-| `obstaculo` | algo a menos de 30 cm | recua e vira |
+| `obstaculo` | algo a menos de 30 cm | curva e, se precisar, gira no lugar |
 | `escuro_e_obstaculo` | escuro com algo à frente | para, apita 3 vezes, manda alerta na hora e desvia |
 | `luz_piscando` | a luz oscila (lâmpada com defeito) | segue devagar e avisa ao MVP (no máximo a cada 30 s) |
 | `objeto_se_aproximando` | algo vem rápido na direção do robô | freia e recua antes de chegar perto |
 
-3. **Segurança acima da IA:** a menos de 25 cm (`DIST_MINIMA_CM`) o robô para, mesmo que o modelo erre; no autônomo ele recua, vira para o lado e só segue com 40 cm livres. Se mandar andar e a distância não mudar por 3 ciclos, ele entende que está preso numa parede e faz uma fuga.
+3. **Segurança acima da IA:** a menos de 25 cm (`DIST_MINIMA_CM`) o robô tira a velocidade na hora e gira no lugar até ter 45 cm livres. Antes disso, a partir de 75 cm, ele vai diminuindo a velocidade e curvando (o lado da curva é conferido pela distância: se piora, ele troca). Se mandar andar e a distância não mudar por 3 ciclos, ele entende que está preso numa parede e faz uma fuga.
 4. Outra tarefa do ESP32 envia a situação ao MVP a cada 5 s (na hora, no caso de alerta), por HTTPS com a hora acertada por NTP, sem travar o robô.
 5. No **treino**, um segundo tipo de IA (Q-learning) aprende o que fazer a cada distância, e o robô ajusta sozinho a distância do freio (de 20 cm até no mínimo 14 cm). Ele aprende reflexos para o ambiente, e **não faz um mapa** do lugar (um sensor só, olhando para frente, e nada que meça o quanto andou).
 
-**Resultados em simulação** (salas simuladas, o mesmo código do robô; no carrinho real ainda não foram medidos): TinyML com 95,1% de acerto e F1 0,93 contra 87,1% das regras fixas; o agente treinado precisou de cerca de 7 vezes menos freios de segurança e andou 3,7 vezes mais que o modo autônomo antigo. Detalhes, limites e gráficos em [docs/ia.md](docs/ia.md).
+**Resultados em simulação** (salas simuladas, o mesmo código do robô; no carrinho real ainda não foram medidos): TinyML com 95,1% de acerto e F1 0,93 contra 87,1% das regras fixas. O modo autônomo **antigo** passava 63% do tempo empurrando a parede sem sair do lugar; o **novo** (movimento suave) passa 7%, anda 5 vezes mais e visita quase 5 vezes mais cantos da sala. O agente do treino anda 5 vezes mais que o autônomo antigo, com cerca de 11 vezes menos freios de segurança. Detalhes, limites e gráficos em [docs/ia.md](docs/ia.md).
 
 ## Integração com o MVP
 `POST /robo` recebe `{luz_pct, distancia_cm, situacao}` com o cabeçalho `X-Token`; `GET /robo` devolve as últimas leituras, que aparecem na tela inicial do MVP: https://chuvarota-85ixn.azurewebsites.net

@@ -1,9 +1,9 @@
 // Aprendizado por reforço (Q-learning) do carrinho. Sem dependência do Arduino: o mesmo código roda no ESP32 e na simulação do
 // computador (maker/tinyml/simular_treino.py), que é onde ele foi testado.
 //
-// A cada ciclo (~0,1 s) o robô olha a distância à frente, escolhe uma ação (frente, frente devagar, girar, ré) e, no ciclo seguinte,
-// recebe uma nota pelo que aconteceu (andou livre = ganha; chegou perto demais = perde). Com as notas ele atualiza uma tabela
-// estado x ação (72 x 5 números) e passa a escolher cada vez mais as ações que deram nota boa.
+// O robô olha a distância à frente, escolhe uma ação (seguir, curvar ou girar para um lado) e a MANTÉM por alguns ciclos
+// (CICLOS_POR_ACAO), para o movimento não ficar picado. No fim recebe uma nota pelo que aconteceu (andou livre = ganha; chegou perto
+// demais, girou à toa ou trocou de lado toda hora = perde) e atualiza uma tabela estado x ação (72 x 5 números).
 //
 // Além disso ele aprende o PRÓPRIO FREIO: a cada freada mede quanto espaço sobrou entre o carrinho parado e o obstáculo e ajusta a
 // distância do freio (1 cm por vez), para ir chegando mais perto das paredes sem bater. Todas as distâncias do treino (faixas do
@@ -19,17 +19,17 @@
 #include "config.h"
 #include "logica.h"
 
-enum Acao { FRENTE = 0, FRENTE_LENTO = 1, GIRAR_ESQ = 2, GIRAR_DIR = 3, RE = 4, N_ACOES = 5 };
+enum Acao { FRENTE = 0, CURVA_ESQ = 1, CURVA_DIR = 2, GIRAR_ESQ = 3, GIRAR_DIR = 4, N_ACOES = 5 };
 
-// estado = faixa da distância (6) x tendência (3) x última ação (4: andou, girou esquerda, girou direita, outra)
+// estado = faixa da distância (6) x tendência (3) x última ação (4: seguiu, virou à esquerda, virou à direita, outra)
 enum { N_FAIXAS = 6, N_TENDENCIAS = 3, N_GIROS = 4, N_ESTADOS = N_FAIXAS * N_TENDENCIAS * N_GIROS };
-enum { PASSOS_POR_BLOCO = 300, N_BLOCOS = 40, VERSAO_MEMORIA = 2 };
+enum { PASSOS_POR_BLOCO = 100, N_BLOCOS = 40, VERSAO_MEMORIA = 3, CICLOS_POR_ACAO = 3 };
 
 constexpr float RL_ALFA = 0.15f;         // o quanto cada experiência nova pesa
 constexpr float RL_GAMA = 0.90f;         // o quanto ele se importa com o que vem depois
 constexpr float RL_EPS_INICIAL = 0.30f;  // chance de testar uma ação aleatória no começo
 constexpr float RL_EPS_MINIMO = 0.05f;   // e depois de muito treino
-constexpr float RL_EPS_TAU = 2500.0f;    // passos para a exploração cair a ~37% do valor inicial
+constexpr float RL_EPS_TAU = 1200.0f;    // passos (cada um dura CICLOS_POR_ACAO ciclos) para a exploração cair a ~37% do valor inicial
 
 // Freio adaptativo (os que você pode querer mudar estão no config.h: TREINO_MARGEM_MIN_CM, TREINO_ADAPTAR_MARGEM, TREINO_APITAR_ERRO)
 constexpr float RL_FREIO_INICIAL_CM = 20;   // distância do freio no começo (o robô a ajusta depois)
@@ -38,10 +38,28 @@ constexpr float RL_FOLGA_MIN_CM = 6;        // depois de freado, quer ficar pelo
 constexpr float RL_FOLGA_MAX_CM = 10;       // se sobrar mais que isso, pode chegar mais perto da próxima vez
 constexpr float RL_PERIGO_EXTRA_CM = 10;    // perde pontos quando chega a menos de (distância do freio + isto)
 constexpr bool RL_PALPITE_INICIAL = true;   // começa com a regra antiga como palpite fraco: aprende bem mais rápido
+// "mandou andar e a distância não mudou": quanto a distância tem que mudar em 3 ciclos andando para não contar como preso
+constexpr float RL_TRAVADO_CM = (0.12f * CARRINHO_CM_S_LENTO) > 1.5f ? (0.12f * CARRINHO_CM_S_LENTO) : 1.5f;
 
 inline const char* nome_acao(int a) {
-  static const char* nomes[] = {"frente", "frente devagar", "girar esquerda", "girar direita", "ré"};
+  static const char* nomes[] = {"seguir em frente", "curva à esquerda", "curva à direita", "girar à esquerda", "girar à direita"};
   return nomes[a];
+}
+
+// 0 = seguiu em frente, 1 = virou à esquerda, 2 = virou à direita
+inline int codigo_giro(Acao a) { return a == FRENTE ? 0 : ((a == CURVA_ESQ || a == GIRAR_ESQ) ? 1 : 2); }
+
+// O que cada ação manda para as rodas (-1 a 1). A velocidade acompanha a distância (perfil_velocidade): mais devagar perto do obstáculo,
+// sem degrau. escuro: no escuro anda um pouco mais devagar. Usado pelo robô e pela simulação.
+inline Rodas rodas_da_acao(Acao a, float d, float margem, bool escuro) {
+  float v = perfil_velocidade(d, margem) * (escuro ? 0.85f : 1.0f);
+  switch (a) {
+    case FRENTE: return misturar(v, 0);
+    case CURVA_ESQ: return misturar(0.6f * v, -0.45f);
+    case CURVA_DIR: return misturar(0.6f * v, 0.45f);
+    case GIRAR_ESQ: return misturar(0, -0.6f);
+    default: return misturar(0, 0.6f);
+  }
 }
 
 // ---- como o robô enxerga o mundo -------------------------------------------------------------------------------------------
@@ -49,48 +67,38 @@ inline const char* nome_acao(int a) {
 inline int faixa_dist(float d, float margem) {
   if (d >= 190) return 5;  // sem eco (nada à frente ou o sensor não pegou nada)
   float folga = d - margem;
-  if (folga < 0) return 0;                       // freio de segurança
-  if (folga < RL_PERIGO_EXTRA_CM) return 1;  // perigo
-  if (folga < 30) return 2;                      // perto
-  if (folga < 70) return 3;                      // médio
-  return 4;                                      // longe, com eco
+  if (folga < 0) return 0;                      // freio de segurança
+  if (folga < RL_PERIGO_EXTRA_CM) return 1;     // perigo
+  if (folga < 30) return 2;                     // perto
+  if (folga < 70) return 3;                     // médio
+  return 4;                                     // longe, com eco
 }
 inline int faixa_tend(float delta_cm) { return delta_cm < -3 ? 0 : (delta_cm > 3 ? 2 : 1); }  // 0 aproximando, 1 estável, 2 afastando
 inline int codigo_estado(float d, float delta_cm, int giro, float margem) {
   return (faixa_dist(d, margem) * N_TENDENCIAS + faixa_tend(delta_cm)) * N_GIROS + giro;
 }
 
-// ---- a nota que o robô recebe: d0 = distância antes da ação, d1 = depois -----------------------------------------------------
-inline float recompensa(Acao a, float d0, float d1, float margem) {
+// ---- a nota que o robô recebe: d0 = distância antes da ação, d1 = depois; ultimo = ação anterior a esta (codigo_giro) --------
+inline float recompensa(Acao a, float d0, float d1, float margem, int ultimo = 3) {
   float perigo = margem + RL_PERIGO_EXTRA_CM, perto = margem + 30, longe = margem + 70;
   float r = -0.05f;  // custo de cada passo: não vale ficar parado
   if (d1 < margem) r -= 10;        // o freio de segurança teve que agir: erro grave
   else if (d1 < perigo) r -= 3;    // quase batida
-  if (a == FRENTE || a == FRENTE_LENTO) {
-    float bom = (a == FRENTE) ? 1.0f : 0.6f;  // andar rápido rende mais, desde que o caminho esteja livre
+  int lado = codigo_giro(a);
+  if (a == FRENTE || a == CURVA_ESQ || a == CURVA_DIR) {
+    float bom = (a == FRENTE) ? 1.0f : 0.5f;  // seguir reto rende mais, desde que o caminho esteja livre
     if (d1 >= perto) r += bom;
     else if (d1 >= perigo) r += bom * 0.3f;
-    if (d0 < 190 && fabsf(d1 - d0) < 1.5f) r -= 2.0f;  // mandou andar e não saiu do lugar: está raspando ou preso em uma parede
-  } else if (a == GIRAR_ESQ || a == GIRAR_DIR) {
+    if (d0 < 190 && fabsf(d1 - d0) < RL_TRAVADO_CM / 2) r -= 2.0f;  // mandou andar e não saiu do lugar: raspando ou preso em uma parede
+    if (a != FRENTE && d0 >= longe) r -= 0.3f;                      // curvar à toa com o caminho livre
+  } else {  // GIRAR no lugar
     r -= 0.1f;
     if (d0 >= longe) r -= 0.5f;                    // girar à toa com o caminho livre
     if (d0 < perto) r += (d1 > d0 + 8) ? 1.0f : 0.1f;  // girou e abriu espaço
-  } else {  // RE: o carrinho não tem sensor atrás, então recuar é às cegas e só vale em último caso
-    r -= 1.0f;
-    if (d0 >= perto) r -= 1.0f;                    // recuar à toa
-    else if (d0 < perigo && d1 > d0 + 5) r += 0.5f;
   }
+  if (lado != 0 && ultimo != 0 && ultimo != 3 && ultimo != lado) r -= 0.5f;  // trocou de lado: vai e volta, o carrinho fica "tremendo"
   return r;
 }
-
-// ---- aleatório simples (xorshift), para não depender do Arduino -------------------------------------------------------------
-inline uint32_t proximo_aleatorio(uint32_t& s) {
-  s ^= s << 13;
-  s ^= s >> 17;
-  s ^= s << 5;
-  return s;
-}
-inline float aleatorio01(uint32_t& s) { return (proximo_aleatorio(s) >> 8) * (1.0f / 16777216.0f); }
 
 // ---- o que fica salvo na memória flash --------------------------------------------------------------------------------------
 struct Bloco {  // resumo de PASSOS_POR_BLOCO passos de treino (um ponto da curva de aprendizado)
@@ -139,16 +147,16 @@ struct Agente {
       for (int s = 0; s < N_ESTADOS; s++) {
         int f = s / (N_TENDENCIAS * N_GIROS), t = (s / N_GIROS) % N_TENDENCIAS;
         float* q = m.q[s];
-        if (f >= 3) {  // médio ou longe: andar
-          q[FRENTE] = 0.5f; q[FRENTE_LENTO] = 0.3f; q[GIRAR_ESQ] = q[GIRAR_DIR] = -0.2f; q[RE] = -0.5f;
-        } else if (f == 2) {  // perto: se está se aproximando, melhor virar
+        if (f >= 3) {  // médio ou longe: seguir
+          q[FRENTE] = 0.5f; q[CURVA_ESQ] = q[CURVA_DIR] = -0.1f; q[GIRAR_ESQ] = q[GIRAR_DIR] = -0.3f;
+        } else if (f == 2) {  // perto: se está se aproximando, melhor curvar
           bool aprox = (t == 0);
-          q[FRENTE] = aprox ? -0.3f : 0.2f; q[FRENTE_LENTO] = 0.2f; q[GIRAR_ESQ] = q[GIRAR_DIR] = aprox ? 0.3f : 0.0f; q[RE] = -0.4f;
-        } else {  // perigo ou freio: virar
-          q[FRENTE] = -1.0f; q[FRENTE_LENTO] = -0.8f; q[GIRAR_ESQ] = q[GIRAR_DIR] = 0.3f; q[RE] = 0.0f;
+          q[FRENTE] = aprox ? -0.2f : 0.3f; q[CURVA_ESQ] = q[CURVA_DIR] = aprox ? 0.35f : 0.1f; q[GIRAR_ESQ] = q[GIRAR_DIR] = aprox ? 0.0f : -0.1f;
+        } else {  // perigo ou freio: girar
+          q[FRENTE] = -1.0f; q[CURVA_ESQ] = q[CURVA_DIR] = -0.2f; q[GIRAR_ESQ] = q[GIRAR_DIR] = 0.4f;
         }
-        if (f <= 4 && t == 1 && (s % N_GIROS) == 0) {  // acabou de andar e a distância não mudou: está preso, melhor virar
-          q[FRENTE] -= 0.5f; q[FRENTE_LENTO] -= 0.5f; q[GIRAR_ESQ] += 0.3f; q[GIRAR_DIR] += 0.3f;
+        if (f <= 4 && t == 1 && (s % N_GIROS) == 0) {  // acabou de seguir e a distância não mudou: está preso, melhor girar
+          q[FRENTE] -= 0.8f; q[CURVA_ESQ] -= 0.2f; q[CURVA_DIR] -= 0.2f; q[GIRAR_ESQ] += 0.5f; q[GIRAR_DIR] += 0.5f;
         }
       }
     }
@@ -159,6 +167,7 @@ struct Agente {
   void recomecar() {
     tem_ant = false;
     giro = 3;
+    espera = 0;
     mascara_freio = 0;
     detector.esquecer();
   }
@@ -174,18 +183,28 @@ struct Agente {
 
   // Chamado a cada ciclo com a distância medida (já filtrada).
   //   explorar: pode testar ações aleatórias (modo treino). aprender: atualiza a tabela (modo treino).
-  //   escuro: no escuro a ação FRENTE é executada devagar (conta como devagar para o freio).
-  // Devolve o que o robô deve fazer. O freio de segurança e a fuga valem mais que o agente e não entram no aprendizado.
+  //   escuro: no escuro a ação FRENTE é um pouco mais devagar (conta como devagar para o freio).
+  // A ação escolhida vale por CICLOS_POR_ACAO ciclos (movimento contínuo); só o freio de segurança e a fuga interrompem antes.
+  // O freio e a fuga valem mais que o agente e não entram no aprendizado.
   Decisao decidir(float d, bool explorar, bool aprender, bool escuro = false) {
     float margem = m.freio_cm[0];  // referência das faixas e das notas
     // distância do freio que vale agora: a da velocidade que ele vinha. Sem saber (acabou de frear), a maior.
     float limite = tem_ant ? m.freio_cm[rapido_ant ? 0 : 1] : (m.freio_cm[0] > m.freio_cm[1] ? m.freio_cm[0] : m.freio_cm[1]);
-    bool andou = tem_ant && (a_ant == FRENTE || a_ant == FRENTE_LENTO);
-    bool raspando = detector.atualizar(andou, d);  // mandou andar e a distância não mudou: preso em uma parede
+    bool andou = tem_ant && a_ant == FRENTE;
+    bool raspando = detector.atualizar(andou, d, RL_TRAVADO_CM);  // mandou seguir e a distância não mudou: preso em uma parede
+    mascara_freio = (mascara_freio << 1) | (d < limite ? 1u : 0u);
+    bool emergencia = (d < limite) || raspando;
+
+    if (tem_ant && espera > 0 && !emergencia) {  // ainda no meio da ação: continua nela
+      espera--;
+      Decisao igual = {a_ant, explorou_ant, false, false, 0};
+      return igual;
+    }
+
     float delta = tem_ant ? d - d_ant : 0;
     int s2 = codigo_estado(d, delta, giro, margem);
-    if (tem_ant && aprender) {  // fecha o ciclo anterior: a nota da ação que ele tomou
-      float r = recompensa(a_ant, d_ant, d, margem);
+    if (tem_ant && aprender) {  // fecha a ação anterior: a nota do que ele fez
+      float r = recompensa(a_ant, d_ant, d, margem, s_ant % N_GIROS);
       float melhor = m.q[s2][0];
       for (int a = 1; a < N_ACOES; a++)
         if (m.q[s2][a] > melhor) melhor = m.q[s2][a];
@@ -193,7 +212,6 @@ struct Agente {
       m.passos++;
       registrar(r, d);
     }
-    mascara_freio = (mascara_freio << 1) | (d < limite ? 1u : 0u);
 
     Decisao x = {FRENTE, false, false, false, 0};
     bool testar = explorar && aleatorio01(rng) < epsilon();
@@ -201,15 +219,18 @@ struct Agente {
     x.explorou = testar;
     s_ant = s2;
     a_ant = x.acao;
+    explorou_ant = testar;
     rapido_ant = (x.acao == FRENTE && !escuro);
     d_ant = d;
     tem_ant = true;
-    giro = (x.acao == GIRAR_ESQ) ? 1 : (x.acao == GIRAR_DIR ? 2 : (x.acao == RE ? 3 : 0));
+    giro = codigo_giro(x.acao);
+    espera = CICLOS_POR_ACAO - 1;
 
     if (d < limite) {  // o freio de segurança assume: a ação do agente não vai ser executada
       freio_rapido = rapido_ant_antes_do_freio(limite);
       tem_ant = false;
       giro = 3;
+      espera = 0;
       if (preso()) {
         x.escapar = true;
         x.lado = lado_fuga;
@@ -221,6 +242,7 @@ struct Agente {
     } else if (raspando) {  // preso sem ter chegado perto o bastante para o freio: fuga
       tem_ant = false;
       giro = 3;
+      espera = 0;
       x.escapar = true;
       x.lado = lado_fuga;
       lado_fuga = -lado_fuga;
@@ -237,8 +259,8 @@ struct Agente {
     if (!adaptar_margem) return;
     float& lim = m.freio_cm[freio_rapido ? 0 : 1];
     if (d_depois >= 190) lim += 3;                                       // sumiu o eco: ficou perto demais para o sensor
-    else if (d_depois < RL_FOLGA_MIN_CM) lim += 2;                   // parou perto demais
-    else if (d_depois > RL_FOLGA_MAX_CM && pode_diminuir) lim -= 1;  // sobrou espaço: pode chegar mais perto
+    else if (d_depois < RL_FOLGA_MIN_CM) lim += 2;                       // parou perto demais
+    else if (d_depois > RL_FOLGA_MAX_CM && pode_diminuir) lim -= 1;      // sobrou espaço: pode chegar mais perto
     if (lim < TREINO_MARGEM_MIN_CM) lim = TREINO_MARGEM_MIN_CM;
     if (lim > RL_MARGEM_MAX_CM) lim = RL_MARGEM_MAX_CM;
     margem_depois = lim;
@@ -246,9 +268,10 @@ struct Agente {
 
  private:
   bool tem_ant = false;
-  bool rapido_ant = false;   // a ação anterior era andar rápido
+  bool rapido_ant = false;    // a ação anterior era seguir na velocidade cheia
   bool freio_rapido = false;  // o freio atual foi de uma andada rápida
-  int s_ant = 0, giro = 0, lado_fuga = 1;
+  bool explorou_ant = false;
+  int s_ant = 0, giro = 0, lado_fuga = 1, espera = 0;
   Acao a_ant = FRENTE;
   float d_ant = 200;
   uint32_t mascara_freio = 0;  // um bit por ciclo: 1 = o freio agiu
