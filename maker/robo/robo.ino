@@ -68,9 +68,9 @@
 
 // --- Distâncias (cm) ---
 #define PROTECAO_FRENTE 1   // 1 = não anda para frente com obstáculo perto; 0 = desliga (se o sensor estiver dando leitura errada)
-#define DIST_PARAR_CM 20    // a menos disso não anda para frente (manual e autônomo)
-#define DIST_DESVIO_CM 35   // autônomo: começa a girar a esta distância
-#define DIST_LIVRE_CM 55    // autônomo: volta a andar quando houver pelo menos isto livre
+#define DIST_PARAR_CM 12    // a menos disso não anda para frente (manual e autônomo)
+#define DIST_DESVIO_CM 22   // autônomo: começa a girar a esta distância
+#define DIST_LIVRE_CM 35    // autônomo: volta a andar quando houver pelo menos isto livre
 
 // --- LDR (leitura de 0 a 4095; olhe o valor "ldr=" no Monitor Serial) ---
 #define LDR_ESCURO 300   // valor com o LDR coberto com o dedo (luz = 0%)
@@ -187,7 +187,7 @@ float medir_distancia() {
   delay(5);
   float c = uma_medida();
   float m = fmaxf(fminf(a, b), fminf(fmaxf(a, b), c));
-  if (m >= SEM_ECO_CM && dist < 15 && sem_eco_seguidos < 20) {
+  if (m >= SEM_ECO_CM && dist < 10 && sem_eco_seguidos < 20) {
     sem_eco_seguidos++;
     return dist;
   }
@@ -272,7 +272,7 @@ void ler_sensores_e_classificar() {
 bool frente_bloqueada() {
   if (PROTECAO_FRENTE && dist < DIST_PARAR_CM) return true;
   if (USAR_IA && millis() < freio_ia_ate) return true;
-  if (USAR_IA && classe == CLASSE_ESCURO_E_OBSTACULO && dist < 40) return true;  // só se a distância medida concorda com a IA
+  if (USAR_IA && classe == CLASSE_ESCURO_E_OBSTACULO && dist < 30) return true;  // só se a distância medida concorda com a IA
   return false;
 }
 

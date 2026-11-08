@@ -38,7 +38,7 @@ Se você ligou em outros pinos, mude só a lista de pinos na seção 1 do `robo.
 ## Controles (Dabble, módulo Gamepad)
 | Botão | O que faz |
 |---|---|
-| Seta cima / baixo | frente / ré (a frente é bloqueada a menos de 20 cm de um obstáculo) |
+| Seta cima / baixo | frente / ré (a frente é bloqueada a menos de 12 cm de um obstáculo) |
 | Seta esquerda / direita | gira no lugar |
 | **Triângulo** | liga/desliga o modo **autônomo** (anda sozinho e desvia das paredes) |
 | X | volta ao manual |
