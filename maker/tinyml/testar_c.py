@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 AQUI = Path(__file__).parent
-FW = AQUI.parent / "firmware" / "robo"
+FW = AQUI.parent / "robo"
 janelas = np.loadtxt(AQUI / "teste_janelas.csv", delimiter=",")
 esperado = np.loadtxt(AQUI / "teste_classes.csv", dtype=int)
 

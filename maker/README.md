@@ -2,96 +2,87 @@
 
 Integrante: **Vinicius Barros, RM 97824**
 
-Carro robô com ESP32 **controlado pelo app Dabble** (Bluetooth), que também **anda sozinho**, desvia de obstáculos, mede a luz do ambiente com um **LDR (sensor novo)** e usa **IA** para entender o que está acontecendo e para **aprender a andar por tentativa e erro**. Quando acha uma situação de risco (ponto escuro com obstáculo, lâmpada piscando, algo vindo rápido), o robô reage e manda um alerta ao MVP do ChuvaRota, que mostra as leituras em tempo real.
+Carro com ESP32 **dirigido pelo app Dabble** (Bluetooth), com sensor de distância (HC-SR04), um **LDR (sensor de luz novo)** e uma **IA (TinyML)** que olha a luz e a distância e reage no próprio carrinho: acende o farol no escuro, anda mais devagar, apita em alertas e freia quando algo vem na direção dele.
 
-> **Estado atual:** firmware, IA e integração com o MVP estão prontos e testados no computador (o firmware compila, o C++ decide igual ao Python, o aprendizado foi testado em simulação e o endpoint está no ar no Azure). **Nada foi medido ainda no carrinho de verdade**: a seção "Resultados com o robô" será preenchida depois dos testes.
+O projeto tem só isto:
 
-## Começar (5 passos)
-1. **Montar:** ligue as peças com o [docs/montagem.md](docs/montagem.md) (esquema em [docs/ligacao.png](docs/ligacao.png)).
-2. **Gravar** (Arduino IDE, passo a passo em [docs/teste_pecas.md](docs/teste_pecas.md)): instale a biblioteca **DabbleESP32**, escolha a partição **Huge APP**, abra `maker/firmware/robo/robo.ino`, copie `wifi_local.example.h` para `wifi_local.h` (na mesma pasta) com o seu Wi-Fi e clique em Upload. Pelo terminal: `./maker/firmware/configurar.sh` e `./maker/firmware/gravar.sh`.
-3. **Conferir cada peça** (opcional): `./maker/firmware/gravar.sh teste_pecas`.
-4. **Calibrar** (uma vez, com o USB e o Monitor Serial em 115200, modo manual): `p` mede a precisão do sensor, `k` o calibra com régua, `v` mede a velocidade e `g` o giro. Cada um diz o que fazer e imprime o que colar no `config.h` ([docs/teste_pecas.md](docs/teste_pecas.md), seção 4b).
-5. **Usar:** abra o **Dabble** no celular, conecte em **ChuvaRota** e dirija. O carrinho não precisa ficar ligado ao computador: só para gravar e para ver mensagens. **Atenção:** com o Dabble ligado o envio ao MVP fica desligado (não sobra memória para o HTTPS); para o MVP receber as leituras, use `USAR_DABBLE 0` no `config.h` (o robô então só anda sozinho).
+```
+maker/
+  robo/
+    robo.ino            <- TODO o programa do carrinho e TODOS os parâmetros (seção 1 do arquivo)
+    caracteristicas.h   <- TinyML: as contas que viram a entrada do modelo
+    modelo_tinyml.h     <- TinyML: a rede neural treinada (gerado, não edite)
+  tinyml/               <- como o modelo foi treinado e testado (Python)
+```
 
-## Painel (gráficos em tempo real)
-Abra `maker/painel/index.html` no **Chrome ou Edge** e conecte o carrinho pelo USB: o painel mostra o treino acontecendo (distância ao vivo, ação, curva de aprendizado, o que ele aprendeu), deixa você **configurar o treino** e **estima o tempo** que falta. Dá para ver uma demonstração sem o carrinho. Passo a passo em [docs/painel.md](docs/painel.md).
+## Colocar para funcionar
+1. **Arduino IDE 2**: em Settings, adicione em "URLs adicionais" `https://espressif.github.io/arduino-esp32/package_esp32_index.json`. Em Placas, instale **esp32 by Espressif Systems 3.x**. Em Bibliotecas, instale **DabbleESP32** (STEMpedia).
+2. **Ferramentas**: placa **ESP32 Dev Module**, Partition Scheme **Huge APP (3MB No OTA/1MB SPIFFS)**, a porta COM do ESP32.
+3. Abra `maker/robo/robo.ino` (o arquivo) e clique em **Upload** (segure o botão BOOT se aparecer `Connecting....`).
+4. Abra o **Monitor Serial em 115200**: ele mostra o que o carrinho "vê".
+5. No celular, abra o **Dabble**, toque em Connect, escolha **ChuvaRota** e entre no módulo **Gamepad**.
 
-## Modos (botões do Dabble)
-| Botão | Modo | O que faz |
+## Ligação
+| Peça | Pino do ESP32 |
+|---|---|
+| L298N motor esquerdo: ENA, IN1, IN2 | 25, 26, 27 |
+| L298N motor direito: ENB, IN3, IN4 | 13, 32, 33 |
+| HC-SR04: TRIG, ECHO | 5, 18 (ECHO direto se o sensor está em 3,3 V; em 5 V precisa de divisor 1k/2k) |
+| LDR | 3,3 V, LDR, GPIO 34, resistor de 10 kΩ, GND |
+| Buzzer ativo | GPIO 23 e GND |
+| LED | o da própria placa (GPIO 2) |
+| Alimentação | bateria no 12V do L298N, saída 5V do L298N no VIN do ESP32, GND de tudo junto |
+
+Se você ligou em outros pinos, mude só a lista de pinos na seção 1 do `robo.ino`.
+
+## Controles (Dabble, módulo Gamepad)
+| Botão | O que faz |
+|---|---|
+| Seta cima / baixo | frente / ré (a frente é bloqueada a menos de 20 cm de um obstáculo) |
+| Seta esquerda / direita | gira no lugar |
+| **Triângulo** | liga/desliga o modo **autônomo** (anda sozinho e desvia das paredes) |
+| X | volta ao manual |
+| Quadrado | buzina |
+
+## O que a IA faz no carrinho
+A cada 0,1 s o carrinho lê o LDR e o sensor de distância. O modelo TinyML olha as últimas 8 leituras (0,8 s) e escolhe uma de 6 situações. A reação aparece no próprio carrinho, em qualquer modo:
+
+| Situação da IA | Como testar | O que você vê |
 |---|---|---|
-| (padrão) | **manual** | você dirige com as setas ou o joystick; ele não deixa bater de frente |
-| **Triângulo** | **autônomo** | anda sozinho com movimento suave: diminui a velocidade e **curva antes da parede**, e só gira no lugar a menos de 25 cm |
-| **Círculo** | **treino** | anda sozinho **e aprende** por tentativa e erro (LED aceso = testando ação aleatória; bip curto = freio de segurança, um erro) |
-| **Start** | **IA** | usa o que aprendeu, sem explorar |
-| **X** | volta ao **manual** | |
-| **Quadrado** | buzina | |
+| `ok` | luz normal, nada à frente | nada de especial |
+| `pouca_luz` | cubra o LDR com o dedo | **LED acende** (farol) e o carrinho anda **mais devagar** |
+| `escuro_e_obstaculo` | cubra o LDR e ponha a mão a menos de 30 cm | **para, apita 3 vezes** e o LED fica aceso |
+| `luz_piscando` | ligue e desligue a lanterna do celular sobre o LDR | **LED pisca** e apita 2 vezes (lâmpada com defeito) |
+| `objeto_se_aproximando` | com o carrinho parado, leve a mão rápido na direção dele | apita 1 vez e ele **não anda para frente por 1,5 s** |
+| `obstaculo` | mão parada a menos de 30 cm | a frente já está bloqueada pela regra da distância |
 
-O aprendizado do treino fica salvo na memória do ESP32. Botões e ajustes em [docs/dabble.md](docs/dabble.md).
+A parada diante de obstáculo usa a distância medida direto, não a IA: a segurança não depende do modelo. Para ver a diferença, mude `USAR_IA` para `0` no `robo.ino` (vira um carrinho comum) e grave de novo.
 
-## Comandos no Monitor Serial (115200)
-`?` lista tudo. Resumo: `a` liga/desliga o treino, `u` a IA, `x` volta ao manual, `q` mostra o que aprendeu, `e` a curva de aprendizado (CSV), `z` apaga o aprendizado (use ao mudar de ambiente), `p` `k` `v` `g` calibração, `i` `r` calibração do LDR.
+O Monitor Serial imprime a cada meio segundo, por exemplo: `luz  12% (ldr= 640) | dist  88 cm | IA: pouca_luz | manual | frente`.
+
+## Ajustes (todos na seção 1 do `robo.ino`)
+| Problema | O que mudar |
+|---|---|
+| Com a seta para cima uma roda vai para trás | `INVERTE_ESQUERDO` ou `INVERTE_DIREITO` para `1` (a roda que foi para trás) |
+| Motor só zumbe | suba `VELOCIDADE_LENTA`/`VELOCIDADE_NORMAL` (abaixo de ~140 o motor TT não anda) ou troque as pilhas |
+| Não anda para frente nunca | olhe `dist` no Monitor Serial: se estiver baixo sem nada à frente, o sensor está lendo errado (confira o ECHO). Teste com `PROTECAO_FRENTE 0` |
+| A IA não percebe o escuro | olhe `ldr=` no Monitor Serial: com o dedo no LDR anote o valor e ponha em `LDR_ESCURO`; com muita luz, em `LDR_CLARO` |
+| Bate na parede | suba `DIST_PARAR_CM` / `DIST_DESVIO_CM` ou baixe `VELOCIDADE_NORMAL` |
+| Quer o carrinho andando sem celular | `MODO_INICIAL 1` |
+
+## TinyML (a pasta `tinyml/`)
+- `simular_sensores.py` gera leituras de luz e distância com os defeitos de sensores de verdade (ruído, ecos falsos, sem eco) para as 6 situações.
+- `treinar.py` treina a rede neural (5 entradas, 16 e 8 neurônios, 6 saídas, com busca de hiperparâmetros), mede o resultado (`metricas.json`, `matriz_confusao.png`, `robustez.png`) e escreve `robo/modelo_tinyml.h`. Resultado em dados simulados: **95,1% de acerto, F1 0,93**, contra 87,1% de regras fixas. **Em dados reais do carrinho ainda não foi medido.**
+- `caracteristicas.py` e `robo/caracteristicas.h` fazem a mesma conta em Python e em C++. `testar_c.py` compila o C++ e confere que ele decide igual ao Python em 400 janelas.
+
+```
+pip install numpy scikit-learn matplotlib
+python maker/tinyml/treinar.py     # treina e regrava robo/modelo_tinyml.h
+python maker/tinyml/testar_c.py    # confere o C++ contra o Python
+```
 
 ## Problema (CitizenTech)
-Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chuva e à noite, aumentam o risco de acidentes e de crimes, e a prefeitura só descobre quando alguém reclama. O robô percorre o local, mede a luz e a distância até os obstáculos e avisa onde precisa de atenção, inclusive lâmpadas com defeito. Contribui para os ODS 11 (cidades sustentáveis) e 9 (infraestrutura).
-
-## Componentes
-| Peça | Função |
-|---|---|
-| ESP32 DevKit | cérebro: lê os sensores, roda o TinyML, comanda os motores e fala com o MVP por Wi-Fi |
-| Chassi 2WD com 2 motores TT | locomoção |
-| Ponte H L298N | aciona os motores e fornece 5 V para o ESP32 |
-| HC-SR04 | distância até obstáculos (o ECHO passa por divisor de tensão 1k/2k) |
-| **LDR + resistor de 10 kΩ** | **sensor novo: luminosidade do ambiente** |
-| Buzzer ativo | alerta sonoro |
-| Bateria de 6 a 9 V | alimentação |
-| Celular com o app **Dabble** | controle por Bluetooth (joystick, setas e botões) |
-
-![ligação](docs/ligacao.png)
-
-![ligação](docs/ligacao.png)
-
-## Como funciona (resumo)
-1. A cada 100 ms o robô lê a **distância** (3 a 5 leituras, descartando as falsas) e a **luz** (média de 8 leituras, normalizada pela autocalibração).
-2. O **modelo TinyML** olha as últimas 8 leituras (0,8 s) e escolhe uma de 6 situações:
-
-| classe | significado | o que o robô faz (modo autônomo) |
-|---|---|---|
-| `ok` | claro e caminho livre | anda em velocidade normal |
-| `pouca_luz` | ambiente escuro, caminho livre | anda devagar e acende o LED |
-| `obstaculo` | algo a menos de 30 cm | curva e, se precisar, gira no lugar |
-| `escuro_e_obstaculo` | escuro com algo à frente | para, apita 3 vezes, manda alerta na hora e desvia |
-| `luz_piscando` | a luz oscila (lâmpada com defeito) | segue devagar e avisa ao MVP (no máximo a cada 30 s) |
-| `objeto_se_aproximando` | algo vem rápido na direção do robô | freia e recua antes de chegar perto |
-
-3. **Segurança acima da IA:** a menos de 25 cm (`DIST_MINIMA_CM`) o robô tira a velocidade na hora e gira no lugar até ter 45 cm livres. Antes disso, a partir de 75 cm, ele vai diminuindo a velocidade e curvando (o lado da curva é conferido pela distância: se piora, ele troca). Se mandar andar e a distância não mudar por 3 ciclos, ele entende que está preso numa parede e faz uma fuga.
-4. Outra tarefa do ESP32 envia a situação ao MVP a cada 5 s (na hora, no caso de alerta), por HTTPS com a hora acertada por NTP, sem travar o robô.
-5. No **treino**, um segundo tipo de IA (Q-learning) aprende o que fazer a cada distância, e o robô ajusta sozinho a distância do freio (de 20 cm até no mínimo 14 cm). Ele aprende reflexos para o ambiente, e **não faz um mapa** do lugar (um sensor só, olhando para frente, e nada que meça o quanto andou).
-
-**Resultados em simulação** (salas simuladas, o mesmo código do robô; no carrinho real ainda não foram medidos): TinyML com 95,1% de acerto e F1 0,93 contra 87,1% das regras fixas. O modo autônomo **antigo** passava 63% do tempo empurrando a parede sem sair do lugar; o **novo** (movimento suave) passa 7%, anda 5 vezes mais e visita quase 5 vezes mais cantos da sala. O agente do treino anda 5 vezes mais que o autônomo antigo, com cerca de 11 vezes menos freios de segurança. Detalhes, limites e gráficos em [docs/ia.md](docs/ia.md).
-
-## Integração com o MVP
-`POST /robo` recebe `{luz_pct, distancia_cm, situacao}` com o cabeçalho `X-Token`; `GET /robo` devolve as últimas leituras, que aparecem na tela inicial do MVP: https://chuvarota-85ixn.azurewebsites.net
-
-- O token do robô está em `config.h`, versionado de propósito para quem avaliar poder reproduzir. É um **token de demonstração**: só permite enviar leituras de teste ao MVP de demonstração (`POST /robo`) e não dá acesso a mais nada. No Azure ele é configurado pelo Terraform (`robo_token`); para usar outro MVP, defina outro `ROBO_TOKEN` lá e troque o valor no `config.h`. O **Wi-Fi não vai para o Git**: fica em `wifi_local.h`.
-- A conexão com o MVP é criptografada (HTTPS), mas o robô não confere o certificado do servidor: o ESP32 recusava a cadeia do Azure. Limite aceito para a demo; o token só grava leituras de teste.
-- Não há dado pessoal: só luz, distância e a classe. O MVP guarda as últimas 50 leituras em memória.
-
-## Pastas
-- `firmware/robo/`: o programa do robô. `robo.ino` (principal), `config.h` (ajustes), `logica.h` (setas, filtro da distância e sensor), `aprendizado.h` (Q-learning), `caracteristicas.h` e `modelo_tinyml.h` (TinyML, gerado), `wifi_local.example.h`
-- `firmware/teste_pecas/`: sketch para testar cada peça sozinha. `firmware/configurar.sh` e `firmware/gravar.sh`
-- `tinyml/`: treino do modelo, simulações e testes
-- `simulador/`: finge ser o robô para testar o endpoint do MVP
-- `painel/`: o painel gráfico do treino em tempo real (`index.html`) e a demonstração
-- `docs/`: montagem, Dabble, testes de bancada e calibração, como a IA funciona ([ia.md](docs/ia.md)) e o painel ([painel.md](docs/painel.md))
-
-## Testes (no computador)
-- **`python maker/tinyml/testar_tudo.py`**: roda tudo de uma vez (TinyML em C++, setas do Dabble, filtro e detector, sensor e calibração, regras do Q-learning e a simulação do treino).
-- `arduino-cli compile --fqbn esp32:esp32:esp32 maker/firmware/robo`: compila o firmware.
-- `pytest mvp`: o endpoint `/robo`. `ROBO_TOKEN=... python maker/simulador/simular_robo.py <url> 8`: manda leituras de teste ao MVP.
-- Testes de bancada com as peças: [docs/teste_pecas.md](docs/teste_pecas.md).
+Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chuva e à noite, aumentam o risco de acidentes e de crimes, e a prefeitura só descobre quando alguém reclama. O robô percorre o local, mede a luz e a distância até os obstáculos e identifica onde precisa de atenção, inclusive lâmpadas com defeito. Contribui para os ODS 11 (cidades sustentáveis) e 9 (infraestrutura).
 
 ## Resultados com o robô
-_A preencher depois dos testes de bancada: distâncias medidas, comportamento nas 6 situações, taxa de acerto com dados reais, vídeo._
-
-## Vídeo
-Link do vídeo: _a preencher_.
+_A preencher depois dos testes: distâncias medidas, comportamento nas 6 situações, vídeo._

@@ -12,4 +12,3 @@ visao/runs/
 visao/data.yaml
 *.pt
 !visao/modelo/best.pt
-maker/firmware/robo/wifi_local.h

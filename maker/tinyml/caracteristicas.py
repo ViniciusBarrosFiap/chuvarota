@@ -1,5 +1,5 @@
 """Características calculadas sobre uma janela de 8 leituras (0,8 s a 10 leituras por segundo).
-A mesma conta existe em C++ (firmware/robo/caracteristicas.h); o testar_c.py confere que as duas dão o mesmo resultado."""
+A mesma conta existe em C++ (robo/caracteristicas.h); o testar_c.py confere que as duas dão o mesmo resultado."""
 import numpy as np
 
 JANELA = 8

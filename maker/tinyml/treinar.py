@@ -18,7 +18,7 @@ from simular_sensores import conjunto
 
 warnings.filterwarnings("ignore")
 AQUI = Path(__file__).parent
-SAIDA_C = AQUI.parent / "firmware" / "robo" / "modelo_tinyml.h"
+SAIDA_C = AQUI.parent / "robo" / "modelo_tinyml.h"
 SEMENTES = {"treino": range(0, 3500), "val": range(3500, 4250), "teste": range(4250, 5000)}
 
 
