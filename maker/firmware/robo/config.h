@@ -12,6 +12,9 @@
 // ===== 1. O que você pode querer mudar ==========================================================================================
 // 1 = controle pelo app Dabble (Bluetooth); 0 = sem Bluetooth, o robô só anda sozinho (sobra mais memória para o envio ao MVP)
 #define USAR_DABBLE 1
+// Envio das leituras ao MVP (Wi-Fi + HTTPS). Com o Bluetooth do Dabble ligado não sobra memória para o HTTPS (erro TLS -16 no Monitor Serial)
+// e as tentativas ainda atrapalham o Bluetooth. Por isso, por padrão, o envio só liga quando USAR_DABBLE é 0. Troque por 1 só para testar.
+#define ENVIAR_AO_MVP (!USAR_DABBLE)
 // nome que aparece no Bluetooth: no app Dabble, toque em Connect e escolha este nome
 #define NOME_BLUETOOTH "ChuvaRota"
 // modo em que o robô começa: 0 = dirigido pelo Dabble, 1 = autônomo (regras + TinyML), 2 = treino (aprende por tentativa e erro),
@@ -34,7 +37,7 @@
 #define DIST_MINIMA_CM 25  // algo mais perto que isso à frente: o robô para e (no autônomo) recua e vira para o lado
 
 // Modo treino (o robô ajusta sozinho a distância do freio entre TREINO_MARGEM_MIN_CM e 30 cm; ver docs/ia.md)
-#define TREINO_MARGEM_MIN_CM 12  // o freio nunca chega mais perto que isso. É o limite de segurança: só diminua depois de testar
+#define TREINO_MARGEM_MIN_CM 14  // o freio nunca chega mais perto que isso (é o limite de segurança). Medido no carrinho: com 12 ele parou a menos de 6 cm do obstáculo
 #define TREINO_ADAPTAR_MARGEM 1  // 0 = a distância do freio fica sempre em 20 cm
 #define TREINO_APITAR_ERRO 1     // 1 = um "bip" curto a cada freio de segurança, para você ouvir os erros acontecendo
 

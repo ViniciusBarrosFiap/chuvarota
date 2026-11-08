@@ -37,6 +37,7 @@ O Dabble é um app gratuito (Android e iOS) que transforma o celular em um contr
 - `NOME_BLUETOOTH`: nome que aparece no app.
 
 ## Se não funcionar
+- **O Dabble cai ou o carrinho some da lista:** pare o carrinho (aperte EN na placa ou desligue a bateria), feche o app Dabble por completo, desligue e ligue o Bluetooth do celular e abra o Dabble de novo. No Android, a localização e a permissão "Dispositivos próximos" precisam estar ligadas. Com o Dabble ligado, o Wi-Fi/MVP fica desligado de propósito (`ENVIAR_AO_MVP` no `config.h`), porque as tentativas de envio atrapalhavam o Bluetooth.
 - **O app não acha o robô:** confira se o código foi gravado com a partição Huge APP, se o Monitor Serial não mostra reinício em loop e se a localização do Android está ligada.
 - **Conecta e cai:** o Bluetooth e o Wi-Fi dividem a antena e a memória do ESP32. Se o Monitor Serial mostrar `envio adiado: pouca memória livre`, o robô não está conseguindo enviar ao MVP, mas continua dirigindo.
 - **O robô vai ao contrário do joystick:** `INVERTE_JOYSTICK_Y`.

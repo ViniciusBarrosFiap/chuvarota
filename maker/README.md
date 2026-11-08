@@ -11,7 +11,7 @@ Carro robô com ESP32 **controlado pelo app Dabble** (Bluetooth), que também **
 2. **Gravar** (Arduino IDE, passo a passo em [docs/teste_pecas.md](docs/teste_pecas.md)): instale a biblioteca **DabbleESP32**, escolha a partição **Huge APP**, abra `maker/firmware/robo/robo.ino`, copie `wifi_local.example.h` para `wifi_local.h` (na mesma pasta) com o seu Wi-Fi e clique em Upload. Pelo terminal: `./maker/firmware/configurar.sh` e `./maker/firmware/gravar.sh`.
 3. **Conferir cada peça** (opcional): `./maker/firmware/gravar.sh teste_pecas`.
 4. **Calibrar** (uma vez, com o USB e o Monitor Serial em 115200, modo manual): `p` mede a precisão do sensor, `k` o calibra com régua, `v` mede a velocidade e `g` o giro. Cada um diz o que fazer e imprime o que colar no `config.h` ([docs/teste_pecas.md](docs/teste_pecas.md), seção 4b).
-5. **Usar:** abra o **Dabble** no celular, conecte em **ChuvaRota** e dirija. O carrinho não precisa ficar ligado ao computador: só para gravar e para ver mensagens.
+5. **Usar:** abra o **Dabble** no celular, conecte em **ChuvaRota** e dirija. O carrinho não precisa ficar ligado ao computador: só para gravar e para ver mensagens. **Atenção:** com o Dabble ligado o envio ao MVP fica desligado (não sobra memória para o HTTPS); para o MVP receber as leituras, use `USAR_DABBLE 0` no `config.h` (o robô então só anda sozinho).
 
 ## Modos (botões do Dabble)
 | Botão | Modo | O que faz |
@@ -62,9 +62,9 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 
 3. **Segurança acima da IA:** a menos de 25 cm (`DIST_MINIMA_CM`) o robô para, mesmo que o modelo erre; no autônomo ele recua, vira para o lado e só segue com 40 cm livres. Se mandar andar e a distância não mudar por 3 ciclos, ele entende que está preso numa parede e faz uma fuga.
 4. Outra tarefa do ESP32 envia a situação ao MVP a cada 5 s (na hora, no caso de alerta), por HTTPS com a hora acertada por NTP, sem travar o robô.
-5. No **treino**, um segundo tipo de IA (Q-learning) aprende o que fazer a cada distância, e o robô ajusta sozinho a distância do freio (de 20 cm até no mínimo 12 cm). Ele aprende reflexos para o ambiente, e **não faz um mapa** do lugar (um sensor só, olhando para frente, e nada que meça o quanto andou).
+5. No **treino**, um segundo tipo de IA (Q-learning) aprende o que fazer a cada distância, e o robô ajusta sozinho a distância do freio (de 20 cm até no mínimo 14 cm). Ele aprende reflexos para o ambiente, e **não faz um mapa** do lugar (um sensor só, olhando para frente, e nada que meça o quanto andou).
 
-**Resultados em simulação** (salas simuladas, o mesmo código do robô; no carrinho real ainda não foram medidos): TinyML com 95,1% de acerto e F1 0,93 contra 87,1% das regras fixas; o agente treinado precisou de cerca de 6 vezes menos freios de segurança e andou 4,7 vezes mais que o modo autônomo antigo. Detalhes, limites e gráficos em [docs/ia.md](docs/ia.md).
+**Resultados em simulação** (salas simuladas, o mesmo código do robô; no carrinho real ainda não foram medidos): TinyML com 95,1% de acerto e F1 0,93 contra 87,1% das regras fixas; o agente treinado precisou de cerca de 7 vezes menos freios de segurança e andou 3,7 vezes mais que o modo autônomo antigo. Detalhes, limites e gráficos em [docs/ia.md](docs/ia.md).
 
 ## Integração com o MVP
 `POST /robo` recebe `{luz_pct, distancia_cm, situacao}` com o cabeçalho `X-Token`; `GET /robo` devolve as últimas leituras, que aparecem na tela inicial do MVP: https://chuvarota-85ixn.azurewebsites.net

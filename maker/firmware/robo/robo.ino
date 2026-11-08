@@ -236,7 +236,7 @@ void trocar_modo(int novo) {
   filtro.esquecer();
   detector.esquecer();
   agente.recomecar();
-  apitar(novo == MANUAL ? 1 : novo);
+  apitar(novo + 1);
   Serial.printf("modo: %s\n", NOMES_MODO[novo]);
 }
 
@@ -546,9 +546,13 @@ void setup() {
   Dabble.begin(NOME_BLUETOOTH);
 #endif
   Serial.printf("memória livre na partida: %u bytes (maior bloco %u)\n", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
+#if ENVIAR_AO_MVP
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_SENHA);
   xTaskCreatePinnedToCore(tarefa_rede, "rede", 20480, NULL, 1, NULL, 0);
+#else
+  Serial.println("envio ao MVP desligado (com o Bluetooth do Dabble não sobra memória para o HTTPS). Para enviar: USAR_DABBLE 0 no config.h");
+#endif
   apitar(1);  // pronto
 #endif
 }

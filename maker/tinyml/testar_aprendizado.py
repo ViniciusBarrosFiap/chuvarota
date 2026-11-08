@@ -74,6 +74,7 @@ int main() {
   SAIDA("freio_apos_perder_eco", h.m.freio_cm[0]);
   for (int i = 0; i < 100; i++) h.freou(30, true);
   SAIDA("freio_minimo", h.m.freio_cm[0]);
+  SAIDA("margem_min_config", TREINO_MARGEM_MIN_CM);
   for (int i = 0; i < 100; i++) h.freou(2, true);
   SAIDA("freio_maximo", h.m.freio_cm[0]);
   Agente fixo;
@@ -124,7 +125,7 @@ confere("o histórico fecha um bloco a cada 300 passos", v["blocos_fechados"] ==
 confere("freio adaptativo: sobrou espaço = freia 1 cm mais perto", v["freio_inicial"] == 20 and v["freio_apos_sobrar_espaco"] == 19)
 confere("freio adaptativo: sem permissão (modo IA) ele não diminui", v["freio_sem_permissao"] == 19)
 confere("freio adaptativo: parou perto demais = +2, perdeu o eco = +3", v["freio_apos_parar_perto"] == 21 and v["freio_apos_perder_eco"] == 24)
-confere("freio adaptativo: respeita o mínimo e o máximo do config.h", v["freio_minimo"] == 12 and v["freio_maximo"] == 30)
+confere("freio adaptativo: respeita o mínimo e o máximo do config.h", v["freio_minimo"] == v["margem_min_config"] and v["freio_maximo"] == 30)
 confere("freio fixo (adaptar_margem desligado) não muda", v["freio_fixo"] == 20)
 confere("as faixas andam com a distância do freio", v["faixa_25_freio12"] == 2 and v["faixa_25"] == 1)
 confere("o que vai para a memória flash cabe com folga (limite de 4000 bytes por valor)", v["bytes_memoria"] < 4000, f"({v['bytes_memoria']:.0f} bytes)")
