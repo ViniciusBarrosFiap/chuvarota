@@ -25,11 +25,11 @@
 
 
 // motores: se uma roda girar ao contrário do esperado, troque 0 por 1 aqui (em vez de mexer nos fios)
-#define INVERTE_ESQUERDO 0
-#define INVERTE_DIREITO 0
+#define INVERTE_ESQUERDO 1
+#define INVERTE_DIREITO 1
 #define VELOCIDADE_NORMAL 180  // 0 a 255
 #define VELOCIDADE_LENTA 120
-#define PWM_MINIMO 110  // abaixo disso os motores TT não vencem o atrito e só zumbem
+#define PWM_MINIMO 1  // abaixo disso os motores TT não vencem o atrito e só zumbem
 
 // Anti-colisão (modo autônomo e Dabble). Se ainda bater na parede, aumente DIST_MINIMA_CM ou diminua VELOCIDADE_NORMAL.
 #define DIST_MINIMA_CM 25  // no autônomo: o carrinho começa a curvar a 75 cm e a girar no lugar a esta distância (sem ré)
