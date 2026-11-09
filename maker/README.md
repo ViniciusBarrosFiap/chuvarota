@@ -2,7 +2,7 @@
 
 Integrante: **Vinicius Barros, RM 97824**
 
-Carro com ESP32 **dirigido pelo app Dabble** (Bluetooth), com sensor de distância (HC-SR04), um **LDR (sensor de luz novo)** e uma **IA (TinyML)** que olha a luz e a distância e reage no próprio carrinho: acende o farol no escuro, anda mais devagar, apita em alertas e freia quando algo vem na direção dele.
+Carro com ESP32 **dirigido pelo app Dabble** (Bluetooth), com sensor de distância (HC-SR04), um **LDR (sensor de luz novo)** e uma **IA (TinyML)** que olha a luz e a distância e reage no próprio carrinho: acende o farol no escuro, apita em alertas e freia quando algo vem na direção dele.
 
 O projeto tem só isto:
 
@@ -50,7 +50,7 @@ A cada 0,1 s o carrinho lê o LDR e o sensor de distância. O modelo TinyML olha
 | Situação da IA | Como testar | O que você vê |
 |---|---|---|
 | `ok` | luz normal, nada à frente | nada de especial |
-| `pouca_luz` | cubra o LDR com o dedo | **LED acende** (farol) e o carrinho anda **mais devagar** |
+| `pouca_luz` | cubra o LDR com o dedo | **LED acende** (farol) |
 | `escuro_e_obstaculo` | cubra o LDR e ponha a mão a menos de 30 cm | **para, apita 3 vezes** e o LED fica aceso |
 | `luz_piscando` | ligue e desligue a lanterna do celular sobre o LDR | **LED pisca** e apita 2 vezes (lâmpada com defeito) |
 | `objeto_se_aproximando` | com o carrinho parado, leve a mão rápido na direção dele | apita 1 vez e ele **não anda para frente por 1,5 s** |
@@ -64,11 +64,12 @@ O Monitor Serial imprime a cada meio segundo, por exemplo: `luz  12% (ldr= 640) 
 | Problema | O que mudar |
 |---|---|
 | Com a seta para cima uma roda vai para trás | `INVERTE_ESQUERDO` ou `INVERTE_DIREITO` para `1` (a roda que foi para trás) |
-| Motor só zumbe | suba `VELOCIDADE_LENTA`/`VELOCIDADE_NORMAL` (abaixo de ~140 o motor TT não anda) ou troque as pilhas |
+| Motor sem força | o código não limita a potência (ENA e ENB ficam sempre ligados, sem PWM). Confira o jumper/fio de ENA e ENB no L298N e o GND comum |
 | Não anda para frente nunca | olhe `dist` no Monitor Serial: se estiver baixo sem nada à frente, o sensor está lendo errado (confira o ECHO). Teste com `PROTECAO_FRENTE 0` |
 | A IA não percebe o escuro | olhe `ldr=` no Monitor Serial: com o dedo no LDR anote o valor e ponha em `LDR_ESCURO`; com muita luz, em `LDR_CLARO` |
-| Bate na parede | suba `DIST_PARAR_CM` / `DIST_DESVIO_CM` ou baixe `VELOCIDADE_NORMAL` |
+| Bate na parede | suba `DIST_PARAR_CM` / `DIST_DESVIO_CM` |
 | Quer o carrinho andando sem celular | `MODO_INICIAL 1` |
+| Quer que NADA bloqueie a seta para cima | `PROTECAO_FRENTE 0` e `USAR_IA 0` (aí ele só obedece as setas) |
 
 ## TinyML (a pasta `tinyml/`)
 - `simular_sensores.py` gera leituras de luz e distância com os defeitos de sensores de verdade (ruído, ecos falsos, sem eco) para as 6 situações.

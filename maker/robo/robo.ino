@@ -15,8 +15,8 @@
        pequena, treinada em maker/tinyml) olha as últimas 8 leituras e diz em qual situação ele está:
 
          situação da IA          como ver no carrinho
-         ok                      nada de especial (LED apagado, velocidade normal)
-         pouca_luz               LDR coberto / ambiente escuro: o LED acende (farol) e o carrinho anda mais DEVAGAR
+         ok                      nada de especial (LED apagado)
+         pouca_luz               LDR coberto / ambiente escuro: o LED acende (farol)
          obstaculo               algo a menos de ~30 cm (o carrinho já para na frente por regra, ver DIST_PARAR_CM)
          escuro_e_obstaculo      escuro E algo à frente: para, apita 3 vezes e o LED fica aceso (alerta)
          luz_piscando            a luz oscila (lanterna ligando e desligando sobre o LDR): o LED pisca e apita 2 vezes
@@ -56,15 +56,12 @@
 // --- Geral ---
 #define NOME_BLUETOOTH "ChuvaRota"  // nome que aparece no app Dabble (toque em Connect)
 #define MODO_INICIAL 0              // 0 = começa no manual (dirija pelo Dabble); 1 = já começa andando sozinho (não precisa do celular)
-#define USAR_IA 1                   // 1 = a IA reage (farol, devagar, alertas, freio); 0 = carrinho comum, só setas e sensor (para comparar)
+#define USAR_IA 1                   // 1 = a IA reage (farol, alertas, freio); 0 = carrinho comum, só setas e sensor (para comparar)
 
 // --- Motores: se com a seta para CIMA uma roda gira para trás, troque 0 por 1 no lado dessa roda ---
 #define INVERTE_ESQUERDO 1  // no carrinho do Vinicius as duas rodas estavam invertidas (valores do config.h antigo)
 #define INVERTE_DIREITO 1
-#define VELOCIDADE_NORMAL 180  // 0 a 255. Abaixo de uns 140 os motores TT só zumbem e não andam
-#define VELOCIDADE_LENTA 120   // usada com pouca luz (a IA manda andar devagar no escuro)
-#define VELOCIDADE_GIRO 180    // ao girar no lugar
-#define PWM_FREQ_HZ 5000       // frequência do PWM (em 1000 os motores chiam)
+// (não existe controle de velocidade: os motores andam sempre com a potência total da bateria)
 
 // --- Distâncias (cm) ---
 #define PROTECAO_FRENTE 1   // 1 = não anda para frente com obstáculo perto; 0 = desliga (se o sensor estiver dando leitura errada)
@@ -126,18 +123,18 @@ bool app_conectado = false;
 // ================================================================================================================================
 // SEÇÃO 3: MOTORES
 // ================================================================================================================================
-// esq e dir: -255 (ré toda) a 255 (frente toda); 0 = freia.
+// Os motores SEMPRE recebem a potência total da bateria: os pinos ENA e ENB ficam ligados (HIGH), sem PWM e sem controle de velocidade.
+// esq e dir: 1 = para frente, -1 = para trás, 0 = freia.
 
-void motor_um(int pwm_pino, int in_a, int in_b, int v) {
-  if (v == 0) {  // freio: as duas entradas iguais e o enable ligado (a ponte H "segura" o motor)
+void motor_um(int enable, int in_a, int in_b, int v) {
+  digitalWrite(enable, HIGH);  // motor liberado, potência total
+  if (v == 0) {                // freio: as duas entradas iguais (a ponte H "segura" o motor)
     digitalWrite(in_a, HIGH);
     digitalWrite(in_b, HIGH);
-    ledcWrite(pwm_pino, 255);
     return;
   }
   digitalWrite(in_a, v > 0);
   digitalWrite(in_b, v < 0);
-  ledcWrite(pwm_pino, constrain(abs(v), 0, 255));
 }
 
 void motor(int esq, int dir) {
@@ -153,13 +150,13 @@ void parar() {
   acao = "parado";
 }
 
-void andar(int velocidade) {  // positivo = frente, negativo = ré
-  motor(velocidade, velocidade);
-  acao = velocidade > 0 ? "frente" : "ré";
+void andar(int sentido) {  // 1 = frente, -1 = ré
+  motor(sentido, sentido);
+  acao = sentido > 0 ? "frente" : "ré";
 }
 
 void girar(int lado) {  // 1 = direita, -1 = esquerda (gira no lugar)
-  motor(lado * VELOCIDADE_GIRO, -lado * VELOCIDADE_GIRO);
+  motor(lado, -lado);
   acao = lado > 0 ? "gira à direita" : "gira à esquerda";
 }
 
@@ -280,12 +277,6 @@ bool frente_bloqueada() {
   return false;
 }
 
-// velocidade de passeio: a IA manda andar devagar quando está escuro ou a luz está piscando
-int velocidade_atual() {
-  bool devagar = USAR_IA && (classe == CLASSE_POUCA_LUZ || classe == CLASSE_ESCURO_E_OBSTACULO || classe == CLASSE_LUZ_PISCANDO);
-  return devagar ? VELOCIDADE_LENTA : VELOCIDADE_NORMAL;
-}
-
 void dirigir_manual() {
   if (!app_conectado) {  // sem o app não há ninguém dirigindo
     parar();
@@ -296,10 +287,10 @@ void dirigir_manual() {
       parar();
       acao = "frente bloqueada";
     } else {
-      andar(velocidade_atual());
+      andar(1);
     }
   } else if (GamePad.isDownPressed()) {
-    andar(-VELOCIDADE_LENTA);
+    andar(-1);
   } else if (GamePad.isRightPressed()) {
     girar(1);
   } else if (GamePad.isLeftPressed()) {
@@ -328,14 +319,14 @@ void dirigir_autonomo() {
       parar();  // a IA mandou segurar (algo se aproximando)
       acao = "freio da IA";
     } else {
-      andar(velocidade_atual());
+      andar(1);
     }
   } else if (fase == GIRAR) {
     girar(lado_giro);
     if (livre_seguidos >= 3 && agora - fase_inicio >= 300) mudar_fase(ANDAR);
     else if (agora - fase_inicio > 3000) mudar_fase(RE);  // preso num canto
   } else {  // RE
-    andar(-VELOCIDADE_LENTA);
+    andar(-1);
     if (agora - fase_inicio > 700) mudar_fase(GIRAR);
   }
 }
@@ -374,13 +365,11 @@ void atualizar_led() {
 
 void setup() {
   Serial.begin(115200);
-  int pinos_saida[] = {IN1, IN2, IN3, IN4, TRIG, BUZZER, LED};
+  int pinos_saida[] = {ENA, ENB, IN1, IN2, IN3, IN4, TRIG, BUZZER, LED};
   for (int p : pinos_saida) pinMode(p, OUTPUT);
   pinMode(ECHO, INPUT);
   pinMode(LDR, INPUT);
   digitalWrite(TRIG, LOW);
-  ledcAttach(ENA, PWM_FREQ_HZ, 8);  // esp32 3.x: ledcAttach(pino, frequência, bits)
-  ledcAttach(ENB, PWM_FREQ_HZ, 8);
   parar();
 
   Dabble.begin(NOME_BLUETOOTH);  // no app Dabble: Connect > "ChuvaRota" > módulo Gamepad
