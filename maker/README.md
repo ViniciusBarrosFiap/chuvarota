@@ -85,6 +85,9 @@ python maker/tinyml/testar_c.py    # confere o C++ contra o Python
 ## Problema (CitizenTech)
 Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chuva e à noite, aumentam o risco de acidentes e de crimes, e a prefeitura só descobre quando alguém reclama. O robô percorre o local, mede a luz e a distância até os obstáculos e identifica onde precisa de atenção, inclusive lâmpadas com defeito. Contribui para os ODS 11 (cidades sustentáveis) e 9 (infraestrutura).
 
+## Ligação com o MVP
+Este firmware **não envia nada à internet**: o carrinho trabalha sozinho, com Bluetooth (Dabble) e Monitor Serial. O MVP tem o endpoint `POST /robo` (e a tabela "Robô nas ruas" da tela), mas hoje nenhum robô o usa; as leituras que entram no pipeline de `dados/` são simuladas.
+
 ## Resultados com o robô
 _A preencher depois dos testes: distâncias medidas, comportamento nas 6 situações, vídeo._
 

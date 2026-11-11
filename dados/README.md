@@ -11,7 +11,7 @@ Pipeline que coleta clima (Open-Meteo) e distritos de SP (IBGE) com Airflow e tr
 - `assets/`: prints da execução
 - `docs/`: diagrama e relatório em PDF
 
-As leituras do robô (`robo/`) ainda não existem em campo, então os arquivos são gerados por uma função em `dags/coleta.py` (sorteio com semente fixa), no mesmo formato que o ESP32 vai mandar.
+As leituras do robô (`robo/`) ainda não existem em campo, então os arquivos são gerados por uma função em `dags/coleta.py` (sorteio com semente fixa), no formato do endpoint `POST /robo` do MVP. O firmware atual do robô (`maker/`) não envia nada à internet, então essa fonte segue simulada.
 
 ## Como rodar
 1. `pip install apache-airflow requests` (Python 3.12) e `airflow standalone`; ativar a DAG `gs_coleta`. Os arquivos caem em `/tmp/chegada` (muda na Variable `CHEGADA_DIR`).

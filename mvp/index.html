@@ -49,7 +49,7 @@ fetch("/alertas").then(r => r.ok ? r.json() : Promise.reject())
   .then(d => linhas("alertas", d.alertas, ["regiao", "mm_3h", "risco"], "risco")).catch(() => erro("alertas"));
 fetch("/robo").then(r => r.ok ? r.json() : Promise.reject())
   .then(d => d.length ? linhas("robo", d.map(hora), ["hora", "luz_pct", "distancia_cm", "situacao"], "situacao") : Promise.reject())
-  .catch(() => { document.getElementById("robo").innerHTML = "<tr><td colspan='4'>Nenhuma leitura do robô ainda.</td></tr>"; });
+  .catch(() => { document.getElementById("robo").innerHTML = "<tr><td colspan='4'>Nenhuma leitura do robô ainda (o robô atual funciona sem internet).</td></tr>"; });
 fetch("/historico").then(r => r.ok ? r.json() : Promise.reject())
   .then(d => linhas("historico", d, ["regiao", "chuva_total_mm", "horas_risco_alto"])).catch(() => erro("historico"));
 </script>

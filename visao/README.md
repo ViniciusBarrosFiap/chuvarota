@@ -24,7 +24,7 @@ O treino original (900) virou 810 de treino e 90 de validação (sorteio com sem
 | nível da água exato | 76% | não estima |
 | nível com erro de no máximo 1 | 98% | não estima |
 
-mAP50 0,59 · mAP50-95 0,41 · inferência de cerca de 13 ms por imagem. Detalhes e limites (fotos de outro país, só ônibus, nível 4 fraco) em [relatorio_visao.pdf](relatorio_visao.pdf).
+mAP50 0,59 · mAP50-95 0,41 · inferência de cerca de 13 ms por imagem na GPU do Mac (cerca de 70 ms em CPU, em `avaliacao/metricas.json`). Detalhes e limites (fotos de outro país, só ônibus, nível 4 fraco) em [relatorio_visao.pdf](relatorio_visao.pdf).
 
 ## Pastas
 - `preparar_dados.py` divide o dataset e gera o `data.yaml`
