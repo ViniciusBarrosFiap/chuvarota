@@ -87,3 +87,6 @@ Pontos de ônibus, calçadas e ruas mal iluminados, principalmente em dia de chu
 
 ## Resultados com o robô
 _A preencher depois dos testes: distâncias medidas, comportamento nas 6 situações, vídeo._
+
+## Vídeo
+Vídeo de demonstração: https://youtu.be/e_pNHcq62Pw
