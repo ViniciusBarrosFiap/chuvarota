@@ -1,5 +1,5 @@
 {
-  "atualizado_em": "2026-11-11T05:22:33.435257+00:00",
+  "atualizado_em": "2026-11-11T13:48:02.810392+00:00",
   "alertas": [
     {
       "id": "se",
@@ -10,7 +10,7 @@
     {
       "id": "pinheiros",
       "regiao": "Pinheiros",
-      "mm_3h": 0.8,
+      "mm_3h": 0.9,
       "risco": "baixo"
     },
     {
@@ -22,13 +22,13 @@
     {
       "id": "santo-amaro",
       "regiao": "Santo Amaro",
-      "mm_3h": 0.6,
+      "mm_3h": 0.7,
       "risco": "baixo"
     },
     {
       "id": "tatuape",
       "regiao": "Tatuapé",
-      "mm_3h": 1.1,
+      "mm_3h": 0.8,
       "risco": "baixo"
     }
   ]
