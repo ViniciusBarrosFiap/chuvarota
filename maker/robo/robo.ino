@@ -59,7 +59,7 @@
 #define USAR_IA 1                   // 1 = a IA reage (farol, alertas, freio); 0 = carrinho comum, só setas e sensor (para comparar)
 
 // --- Motores: se com a seta para CIMA uma roda gira para trás, troque 0 por 1 no lado dessa roda ---
-#define INVERTE_ESQUERDO 1  // no carrinho do Vinicius as duas rodas estavam invertidas (valores do config.h antigo)
+#define INVERTE_ESQUERDO 1  // no meu carrinho as duas rodas estavam invertidas
 #define INVERTE_DIREITO 1
 // (não existe controle de velocidade: os motores andam sempre com a potência total da bateria)
 
