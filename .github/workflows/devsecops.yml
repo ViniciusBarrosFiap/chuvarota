@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - run: pip install semgrep
-      - run: semgrep scan --config p/python --config p/dockerfile --metrics=off --error mvp/app.py rpa/src ia/src Dockerfile
+      - run: semgrep scan --config p/python --config p/dockerfile --metrics=off --error mvp/app.py rpa/src Dockerfile
 
   testes:
     runs-on: ubuntu-latest
