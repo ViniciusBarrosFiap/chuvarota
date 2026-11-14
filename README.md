@@ -6,6 +6,12 @@ ChuvaRota avisa quem anda a pé ou de ônibus em São Paulo se vai chover forte 
 
 Site no ar: https://chuvarota-85ixn.azurewebsites.net
 
+## Teste rápido (para quem vai avaliar)
+1. Abra o site no ar: https://chuvarota-85ixn.azurewebsites.net (se demorar uns segundos no primeiro acesso, é o plano gratuito acordando).
+2. Veja o pipeline na aba **Actions** deste repositório. Esta execução foi **barrada** pela verificação de segurança: https://github.com/ViniciusBarrosFiap/chuvarota/actions/runs/43599824816 e esta é a **corrigida**: https://github.com/ViniciusBarrosFiap/chuvarota/actions/runs/43599902680
+3. Para rodar na sua máquina (precisa do Docker): `docker compose up --build`. O site abre em http://localhost:8000, o Prometheus em 9090 e o Grafana em 3000.
+4. Os prints do painel, do alerta e da nuvem estão no relatório [infra/relatorio_devops.pdf](infra/relatorio_devops.pdf).
+
 ## Ficha técnica
 | Item | Conteúdo |
 |---|---|

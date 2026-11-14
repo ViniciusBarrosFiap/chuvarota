@@ -6,6 +6,15 @@ Esta automação faz sozinha o que antes era feito na mão: a cada 3 horas ela v
 
 ![fluxo](assets/fluxo_bpmn.png)
 
+## Teste rápido (para quem vai avaliar)
+Na pasta do repositório (depois de `git clone https://github.com/ViniciusBarrosFiap/chuvarota`):
+```
+pip install requests pytest
+python rpa/src/rpa.py
+pytest rpa/tests
+```
+O primeiro comando busca a previsão de verdade e imprime `{'ok': 5, 'falhas': 0}`. Ele atualiza o `mvp/data/alertas.json` e escreve no `rpa/logs/rpa.log`. Os testes mostram os casos de sucesso, de decisão e de falha. Sem rodar nada, o log e o PDF já mostram uma execução real.
+
 ## Como funciona
 - **De onde vem:** uma lista de regiões (em `src/rpa.py`) e a previsão do Open-Meteo, que é aberta e não pede chave.
 - **Para cada região:** soma a chuva de 3 horas seguidas e pega o maior valor. 15 mm ou mais é risco alto, de 5 a 15 mm é médio e abaixo disso é baixo.
