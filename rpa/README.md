@@ -1,6 +1,6 @@
 # RPA: alertas de chuva
 
-Vinicius Barros, RM 97824 (FIAP, Global Solution 2026, Robotic Process Automation)
+Vinicius Oliveira de Barros, RM 97824 (FIAP, Global Solution 2026, Robotic Process Automation)
 
 Esta automação faz sozinha o que antes era feito na mão: a cada 3 horas ela vê a previsão de chuva de 5 regiões de São Paulo, diz se o risco é alto, médio ou baixo e grava o resultado em `mvp/data/alertas.json`. O site do ChuvaRota lê esse arquivo e mostra na tela.
 

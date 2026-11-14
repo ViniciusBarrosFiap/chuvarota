@@ -1,6 +1,6 @@
 # ChuvaRota
 
-Vinicius Barros, RM 97824 (FIAP, Global Solution 2026, CitizenTech)
+Vinicius Oliveira de Barros, RM 97824 (FIAP, Global Solution 2026, CitizenTech)
 
 ChuvaRota avisa quem anda a pé ou de ônibus em São Paulo se vai chover forte na região dele, para ninguém ser pego de surpresa por um alagamento. Este repositório tem o site (MVP), a automação que atualiza os alertas e toda a parte de nuvem e segurança (DevOps).
 
