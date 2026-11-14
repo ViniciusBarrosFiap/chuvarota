@@ -193,3 +193,11 @@
 2026-11-13 21:16:12,465 INFO regiao=santo-amaro mm_3h=1.8 risco=baixo
 2026-11-13 21:16:12,540 INFO regiao=tatuape mm_3h=2.7 risco=baixo
 2026-11-13 21:16:12,540 INFO fim ok=5 falhas=0
+2026-11-14 05:36:59,288 WARNING regiao=se tentativa=1 erro=ReadTimeout
+2026-11-14 05:37:16,395 WARNING regiao=se tentativa=2 erro=ReadTimeout
+2026-11-14 05:37:20,467 INFO regiao=se mm_3h=0.1 risco=baixo
+2026-11-14 05:37:20,553 INFO regiao=pinheiros mm_3h=0.3 risco=baixo
+2026-11-14 05:37:20,625 INFO regiao=mooca mm_3h=0.1 risco=baixo
+2026-11-14 05:37:20,717 INFO regiao=santo-amaro mm_3h=0.3 risco=baixo
+2026-11-14 05:37:20,800 INFO regiao=tatuape mm_3h=0.1 risco=baixo
+2026-11-14 05:37:20,801 INFO fim ok=5 falhas=0
