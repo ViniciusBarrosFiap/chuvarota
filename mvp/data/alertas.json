@@ -1,22 +1,22 @@
 {
-  "atualizado_em": "2026-11-19T20:12:54.174483+00:00",
+  "atualizado_em": "2026-11-20T02:06:36.325079+00:00",
   "alertas": [
     {
       "id": "se",
       "regiao": "Sé",
-      "mm_3h": 1.3,
+      "mm_3h": 0.7,
       "risco": "baixo"
     },
     {
       "id": "pinheiros",
       "regiao": "Pinheiros",
-      "mm_3h": 1.2,
+      "mm_3h": 1.0,
       "risco": "baixo"
     },
     {
       "id": "mooca",
       "regiao": "Mooca",
-      "mm_3h": 1.3,
+      "mm_3h": 0.7,
       "risco": "baixo"
     },
     {
