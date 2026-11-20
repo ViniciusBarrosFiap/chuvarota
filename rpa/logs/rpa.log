@@ -285,3 +285,9 @@
 2026-11-20 02:06:36,134 INFO regiao=santo-amaro mm_3h=0.7 risco=baixo
 2026-11-20 02:06:36,324 INFO regiao=tatuape mm_3h=0.6 risco=baixo
 2026-11-20 02:06:36,325 INFO fim ok=5 falhas=0
+2026-11-20 11:04:00,407 INFO regiao=se mm_3h=2.7 risco=baixo
+2026-11-20 11:04:00,651 INFO regiao=pinheiros mm_3h=2.4 risco=baixo
+2026-11-20 11:04:00,880 INFO regiao=mooca mm_3h=2.7 risco=baixo
+2026-11-20 11:04:01,072 INFO regiao=santo-amaro mm_3h=2.8 risco=baixo
+2026-11-20 11:04:01,259 INFO regiao=tatuape mm_3h=1.3 risco=baixo
+2026-11-20 11:04:01,259 INFO fim ok=5 falhas=0
