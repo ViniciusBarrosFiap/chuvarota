@@ -1,5 +1,5 @@
 {
-  "atualizado_em": "2026-11-21T10:46:06.121403+00:00",
+  "atualizado_em": "2026-11-21T18:52:30.500302+00:00",
   "alertas": [
     {
       "id": "se",
@@ -22,7 +22,7 @@
     {
       "id": "santo-amaro",
       "regiao": "Santo Amaro",
-      "mm_3h": 4.3,
+      "mm_3h": 4.1,
       "risco": "baixo"
     },
     {
