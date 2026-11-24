@@ -1,10 +1,10 @@
 {
-  "atualizado_em": "2026-11-24T09:03:08.042290+00:00",
+  "atualizado_em": "2026-11-24T22:05:33.636983+00:00",
   "alertas": [
     {
       "id": "se",
       "regiao": "Sé",
-      "mm_3h": 3.5,
+      "mm_3h": 3.0,
       "risco": "baixo"
     },
     {
@@ -16,7 +16,7 @@
     {
       "id": "mooca",
       "regiao": "Mooca",
-      "mm_3h": 3.5,
+      "mm_3h": 3.0,
       "risco": "baixo"
     },
     {
